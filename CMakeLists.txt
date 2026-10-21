@@ -29,6 +29,8 @@ set(SOURCES
     src/core/ProjectEngine.cpp
     src/core/BackupManager.hpp
     src/core/BackupManager.cpp
+    src/themes/ThemeEngine.hpp
+    src/themes/ThemeEngine.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc
