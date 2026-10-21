@@ -450,12 +450,12 @@ class EscritorioProject:
         """Obtiene un nodo del Binder por su UUID."""
         return self.items_by_uuid.get(uuid)
 
-    def add_item(self, parent_uuid: str, title: str, item_type: str = "Text") -> BinderItem:
+    def add_item(self, parent_uuid: str, title: str, item_type: str = "Text", item_uuid: Optional[str] = None) -> BinderItem:
         """Añade un nuevo nodo al árbol del Binder."""
         parent = self.get_item(parent_uuid)
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_data = BinderItemData(
-            uuid=UUIDManager.generate_uuid(),
+            uuid=item_uuid or UUIDManager.generate_uuid(),
             item_type=item_type,
             title=title,
             created=now_str,
@@ -469,6 +469,391 @@ class EscritorioProject:
         new_item = self._register_item_tree(new_data)
         self.save_structure()
         return new_item
+
+    # =========================================================================
+    # Navegación y Operaciones Estructurales del Binder
+    # =========================================================================
+
+    def get_draft_folder(self) -> Optional[BinderItem]:
+        for item in self.root_items:
+            if item.item_type == "DraftFolder":
+                return item
+        return None
+
+    def get_research_folder(self) -> Optional[BinderItem]:
+        for item in self.root_items:
+            if item.item_type == "ResearchFolder":
+                return item
+        return None
+
+    def get_trash_folder(self) -> Optional[BinderItem]:
+        for item in self.root_items:
+            if item.item_type == "TrashFolder":
+                return item
+        return None
+
+    def get_templates_folder(self) -> Optional[BinderItem]:
+        for item in self.items_by_uuid.values():
+            if item.item_type == "TemplatesFolder" or getattr(item.data, "is_template_folder", False):
+                return item
+            if item.data.icon_file_name and "template" in item.data.icon_file_name.lower():
+                return item
+        return None
+
+    def set_templates_folder(self, folder_uuid: str):
+        item = self.get_item(folder_uuid)
+        if item:
+            item.item_type = "TemplatesFolder"
+            item.data.icon_file_name = "TemplateFolder.png"
+            self.project_data["template_folder_uuid"] = folder_uuid
+            self.save_structure()
+
+    def find_parent(self, item_uuid: str) -> Optional[BinderItem]:
+        """Encuentra el nodo padre de un elemento en el árbol."""
+        for root in self.root_items:
+            if root.uuid == item_uuid:
+                return None
+            parent = self._find_parent_recursive(root, item_uuid)
+            if parent:
+                return parent
+        return None
+
+    def _find_parent_recursive(self, current: BinderItem, target_uuid: str) -> Optional[BinderItem]:
+        for child_data in current.data.children:
+            if child_data.uuid == target_uuid:
+                return current
+            child_item = self.get_item(child_data.uuid)
+            if child_item:
+                found = self._find_parent_recursive(child_item, target_uuid)
+                if found:
+                    return found
+        return None
+
+    def find_parent_data_and_index(self, item_uuid: str):
+        """Devuelve una tupla (parent_data, children_list, index_in_list)."""
+        for idx, root in enumerate(self.project_data.get("binder", [])):
+            if root.uuid == item_uuid:
+                return (None, self.project_data["binder"], idx)
+
+        for item_data in self.project_data.get("binder", []):
+            res = self._find_data_and_index_recursive(item_data, item_uuid)
+            if res:
+                return res
+        return None
+
+    def _find_data_and_index_recursive(self, parent_data: BinderItemData, target_uuid: str):
+        for idx, child in enumerate(parent_data.children):
+            if child.uuid == target_uuid:
+                return (parent_data, parent_data.children, idx)
+            res = self._find_data_and_index_recursive(child, target_uuid)
+            if res:
+                return res
+        return None
+
+    def move_item(self, item_uuid: str, target_parent_uuid: str, index: Optional[int] = None):
+        """Mueve un elemento a un nuevo padre y posición dentro de sus hermanos."""
+        item = self.get_item(item_uuid)
+        target_parent = self.get_item(target_parent_uuid)
+        if not item or not target_parent:
+            return False
+
+        # No se puede mover una carpeta raíz especial
+        if item.item_type in ("DraftFolder", "ResearchFolder", "TrashFolder"):
+            return False
+
+        # Desvincular de su contenedor actual
+        loc = self.find_parent_data_and_index(item_uuid)
+        if not loc:
+            return False
+        _, parent_list, cur_idx = loc
+        item_data = parent_list.pop(cur_idx)
+
+        # Insertar en nuevo contenedor
+        if index is None or index < 0 or index > len(target_parent.data.children):
+            target_parent.data.children.append(item_data)
+        else:
+            target_parent.data.children.insert(index, item_data)
+
+        self.save_structure()
+        return True
+
+    def duplicate_item(self, item_uuid: str, target_parent_uuid: Optional[str] = None, dest_uuid: Optional[str] = None) -> Optional[BinderItem]:
+        """Duplica profundamente un elemento, sus ficheros y todos sus descendientes."""
+        source = self.get_item(item_uuid)
+        if not source:
+            return None
+
+        # Determinar padre de destino
+        if target_parent_uuid:
+            parent = self.get_item(target_parent_uuid)
+        else:
+            parent = self.find_parent(item_uuid)
+
+        def clone_recursive(src_item: BinderItem, force_uuid: Optional[str] = None) -> BinderItemData:
+            now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            new_uuid = force_uuid or UUIDManager.generate_uuid()
+            new_data = BinderItemData(
+                uuid=new_uuid,
+                item_type=src_item.item_type,
+                title=f"{src_item.title} (Copia)",
+                created=now_str,
+                modified=now_str,
+                include_in_compile=src_item.data.include_in_compile,
+                section_type=src_item.data.section_type,
+                label_id=src_item.data.label_id,
+                status_id=src_item.data.status_id,
+                target_words=src_item.data.target_words,
+                custom_metadata=dict(src_item.data.custom_metadata),
+                keywords=list(src_item.data.keywords),
+                icon_file_name=src_item.data.icon_file_name
+            )
+
+            # Clonar contenido físico a disco desde memoria o archivo existente
+            src_dir = src_item.get_data_dir()
+            dest_dir = self.project_dir / "Files" / "Data" / new_uuid
+            dest_dir.mkdir(parents=True, exist_ok=True)
+
+            content_rtf = src_item.read_content_rtf()
+            if content_rtf:
+                AtomicStorage.write_atomic_text(dest_dir / "content.rtf", content_rtf, encoding="utf-8")
+
+            syn = src_item.read_synopsis()
+            if syn:
+                AtomicStorage.write_atomic_text(dest_dir / "synopsis.txt", syn, encoding="utf-8")
+
+            notes = src_item.read_notes_rtf()
+            if notes:
+                AtomicStorage.write_atomic_text(dest_dir / "notes.rtf", notes, encoding="utf-8")
+
+            for child in src_item.children:
+                child_clone = clone_recursive(child)
+                new_data.children.append(child_clone)
+
+            return new_data
+
+        cloned_data = clone_recursive(source, dest_uuid)
+
+        if parent:
+            # Insertar justo después del original si son hermanos
+            idx = next((i for i, c in enumerate(parent.data.children) if c.uuid == item_uuid), -1)
+            if idx != -1:
+                parent.data.children.insert(idx + 1, cloned_data)
+            else:
+                parent.data.children.append(cloned_data)
+        else:
+            self.project_data["binder"].append(cloned_data)
+
+        cloned_item = self._register_item_tree(cloned_data)
+        self.save_structure()
+        return cloned_item
+
+    def split_item(self, item_uuid: str, split_char_pos: int, new_title: str = "Continuación", new_item_uuid: Optional[str] = None) -> Optional[BinderItem]:
+        """Divide un documento de texto en dos en la posición de caracteres indicada."""
+        item = self.get_item(item_uuid)
+        if not item:
+            return None
+
+        content_rtf = item.read_content_rtf()
+        plain_text = RTFEngine.rtf_to_plain_text(content_rtf)
+
+        if split_char_pos < 0 or split_char_pos > len(plain_text):
+            split_char_pos = len(plain_text) // 2
+
+        first_part = plain_text[:split_char_pos]
+        second_part = plain_text[split_char_pos:].lstrip()
+
+        # Actualizar primer documento
+        item.write_content_rtf(RTFEngine.plain_text_to_rtf(first_part))
+
+        # Crear segundo documento como hermano
+        parent = self.find_parent(item_uuid)
+        parent_uuid = parent.uuid if parent else ""
+        new_item = self.add_item(parent_uuid, title=new_title, item_type=item.item_type, item_uuid=new_item_uuid)
+        new_item.write_content_rtf(RTFEngine.plain_text_to_rtf(second_part))
+        new_item.write_synopsis(item.read_synopsis())
+
+        # Colocar inmediatamente después del original
+        if parent:
+            idx_orig = next((i for i, c in enumerate(parent.data.children) if c.uuid == item_uuid), -1)
+            idx_new = next((i for i, c in enumerate(parent.data.children) if c.uuid == new_item.uuid), -1)
+            if idx_orig != -1 and idx_new != -1 and idx_new != idx_orig + 1:
+                data = parent.data.children.pop(idx_new)
+                parent.data.children.insert(idx_orig + 1, data)
+
+        self.save_all()
+        return new_item
+
+    def split_item_with_selection_as_title(self, item_uuid: str, start_pos: int, end_pos: int, new_item_uuid: Optional[str] = None) -> Optional[BinderItem]:
+        """Divide el documento usando el texto seleccionado como título del nuevo documento."""
+        item = self.get_item(item_uuid)
+        if not item:
+            return None
+
+        content_rtf = item.read_content_rtf()
+        plain_text = RTFEngine.rtf_to_plain_text(content_rtf)
+
+        if start_pos > end_pos:
+            start_pos, end_pos = end_pos, start_pos
+        start_pos = max(0, min(start_pos, len(plain_text)))
+        end_pos = max(0, min(end_pos, len(plain_text)))
+
+        title_text = plain_text[start_pos:end_pos].strip()
+        if not title_text:
+            title_text = "Nueva Escena"
+
+        first_part = plain_text[:start_pos].rstrip()
+        second_part = plain_text[end_pos:].lstrip()
+
+        item.write_content_rtf(RTFEngine.plain_text_to_rtf(first_part))
+
+        parent = self.find_parent(item_uuid)
+        parent_uuid = parent.uuid if parent else ""
+        new_item = self.add_item(parent_uuid, title=title_text, item_type=item.item_type, item_uuid=new_item_uuid)
+        new_item.write_content_rtf(RTFEngine.plain_text_to_rtf(second_part))
+
+        if parent:
+            idx_orig = next((i for i, c in enumerate(parent.data.children) if c.uuid == item_uuid), -1)
+            idx_new = next((i for i, c in enumerate(parent.data.children) if c.uuid == new_item.uuid), -1)
+            if idx_orig != -1 and idx_new != -1 and idx_new != idx_orig + 1:
+                data = parent.data.children.pop(idx_new)
+                parent.data.children.insert(idx_orig + 1, data)
+
+        self.save_all()
+        return new_item
+
+    def merge_items(self, item_uuids: List[str], separator: str = "\n\n* * *\n\n") -> Optional[BinderItem]:
+        """Fusiona múltiples documentos en el primero de ellos, concatenando texto, notas y sinopsis."""
+        if not item_uuids:
+            return None
+        primary_item = self.get_item(item_uuids[0])
+        if not primary_item:
+            return None
+
+        merged_texts = [RTFEngine.rtf_to_plain_text(primary_item.read_content_rtf())]
+        merged_synopsis = [primary_item.read_synopsis()]
+        merged_notes = [primary_item.read_notes_rtf()]
+
+        for other_uuid in item_uuids[1:]:
+            other = self.get_item(other_uuid)
+            if not other:
+                continue
+            merged_texts.append(RTFEngine.rtf_to_plain_text(other.read_content_rtf()))
+            s = other.read_synopsis()
+            if s:
+                merged_synopsis.append(s)
+            n = other.read_notes_rtf()
+            if n:
+                merged_notes.append(n)
+
+            # Adoptar hijos del otro documento
+            for child in list(other.children):
+                self.move_item(child.uuid, primary_item.uuid)
+
+            # Enviar a la papelera el documento absorbido
+            self.move_to_trash(other.uuid)
+
+        # Escribir concatenación en el documento primario
+        full_text = separator.join(t for t in merged_texts if t.strip())
+        primary_item.write_content_rtf(RTFEngine.plain_text_to_rtf(full_text))
+
+        if any(merged_synopsis):
+            primary_item.write_synopsis("\n---\n".join(s for s in merged_synopsis if s.strip()))
+
+        if any(merged_notes):
+            primary_item.write_notes_rtf("\n".join(n for n in merged_notes if n.strip()))
+
+        self.save_all()
+        return primary_item
+
+    def group_items(self, item_uuids: List[str], folder_title: str = "Nueva Carpeta", folder_uuid: Optional[str] = None) -> Optional[BinderItem]:
+        """Crea una carpeta nueva y mueve dentro los ítems seleccionados (Ctrl+G)."""
+        if not item_uuids:
+            return None
+
+        first_item = self.get_item(item_uuids[0])
+        if not first_item:
+            return None
+
+        parent = self.find_parent(first_item.uuid)
+        parent_uuid = parent.uuid if parent else ""
+
+        # Crear carpeta en la misma ubicación
+        new_folder = self.add_item(parent_uuid, title=folder_title, item_type="Folder", item_uuid=folder_uuid)
+
+        # Mover la carpeta justo a la posición del primer elemento
+        if parent:
+            idx_first = next((i for i, c in enumerate(parent.data.children) if c.uuid == first_item.uuid), -1)
+            idx_folder = next((i for i, c in enumerate(parent.data.children) if c.uuid == new_folder.uuid), -1)
+            if idx_first != -1 and idx_folder != -1:
+                data = parent.data.children.pop(idx_folder)
+                parent.data.children.insert(idx_first, data)
+
+        # Mover todos los ítems dentro de la nueva carpeta
+        for u in item_uuids:
+            self.move_item(u, new_folder.uuid)
+
+        self.save_structure()
+        return new_folder
+
+    def ungroup_folder(self, folder_uuid: str) -> List[BinderItem]:
+        """Extrae los hijos al nivel superior y elimina la carpeta contenedora (Ctrl+Shift+G)."""
+        folder = self.get_item(folder_uuid)
+        if not folder or folder.item_type in ("DraftFolder", "ResearchFolder", "TrashFolder"):
+            return []
+
+        parent = self.find_parent(folder_uuid)
+        parent_uuid = parent.uuid if parent else ""
+
+        extracted_children = list(folder.children)
+
+        # Encontrar índice de la carpeta
+        loc = self.find_parent_data_and_index(folder_uuid)
+        insert_idx = loc[2] if loc else 0
+
+        # Mover cada hijo al padre
+        for offset, child in enumerate(extracted_children):
+            self.move_item(child.uuid, parent_uuid, insert_idx + offset)
+
+        # Eliminar carpeta vacía
+        self.move_to_trash(folder_uuid)
+
+        self.save_structure()
+        return extracted_children
+
+    def move_to_trash(self, item_uuid: str) -> bool:
+        """Mueve un elemento a la carpeta Papelera."""
+        trash = self.get_trash_folder()
+        if not trash or item_uuid == trash.uuid:
+            return False
+
+        item = self.get_item(item_uuid)
+        if not item or item.item_type in ("DraftFolder", "ResearchFolder"):
+            return False
+
+        # Guardar metadato de ubicación previa para restauración
+        parent = self.find_parent(item_uuid)
+        item.data.custom_metadata["_pre_trash_parent_uuid"] = parent.uuid if parent else ""
+
+        return self.move_item(item_uuid, trash.uuid)
+
+    def restore_from_trash(self, item_uuid: str, target_parent_uuid: Optional[str] = None) -> bool:
+        """Restaura un elemento de la Papelera a su ubicación original o a Manuscrito."""
+        item = self.get_item(item_uuid)
+        if not item:
+            return False
+
+        dest_uuid = target_parent_uuid
+        if not dest_uuid:
+            dest_uuid = item.data.custom_metadata.get("_pre_trash_parent_uuid")
+            if not dest_uuid or not self.get_item(dest_uuid):
+                draft = self.get_draft_folder()
+                dest_uuid = draft.uuid if draft else ""
+
+        if not dest_uuid:
+            return False
+
+        item.data.custom_metadata.pop("_pre_trash_parent_uuid", None)
+        return self.move_item(item_uuid, dest_uuid)
 
     # =========================================================================
     # Autoguardado Atómico y Persistencia

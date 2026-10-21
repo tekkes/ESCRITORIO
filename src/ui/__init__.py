@@ -1,11 +1,19 @@
 """
 Escritorio UI Module
-Componentes de presentación visual: Ventana principal, Binder, Editor RTF, Split View,
-Corcho (Corkboard), Esquematizador (Outliner), Inspector y Modo Composición.
+Componentes de presentación visual: Ventana principal, BinderWidget, BinderView, Editor RTF, Split View,
+Corcho (Corkboard), Esquematizador (Outliner), Inspector, Modo Composición y Colecciones.
 """
 
 from .main_window import MainWindow
 from .binder import BinderView
+from .BinderWidget import (
+    BinderWidget,
+    BinderTreeView,
+    LabelColorMode,
+    CollectionsManager,
+    IconLibrary,
+    UndoStack
+)
 from .editor_rtf import RTFEditorView
 from .split_view import SplitContainer
 from .corkboard import CorkboardView
@@ -16,6 +24,12 @@ from .composition_mode import CompositionMode
 __all__ = [
     "MainWindow",
     "BinderView",
+    "BinderWidget",
+    "BinderTreeView",
+    "LabelColorMode",
+    "CollectionsManager",
+    "IconLibrary",
+    "UndoStack",
     "RTFEditorView",
     "SplitContainer",
     "CorkboardView",

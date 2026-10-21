@@ -31,6 +31,8 @@ set(SOURCES
     src/core/BackupManager.cpp
     src/themes/ThemeEngine.hpp
     src/themes/ThemeEngine.cpp
+    src/ui/BinderWidget.hpp
+    src/ui/BinderWidget.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc

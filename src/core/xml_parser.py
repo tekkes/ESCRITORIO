@@ -40,11 +40,48 @@ class StatusDefinition:
 
 @dataclass
 class CollectionDefinition:
-    id: str
-    title: str
+    id: str = ""
+    title: str = ""
     collection_type: str = "Arbitrary"  # "Arbitrary" o "Search"
     item_uuids: List[str] = field(default_factory=list)
     search_query: str = ""
+    color_rgba: str = "0.2 0.6 0.8 1.0"
+    search_settings: Dict[str, Any] = field(default_factory=dict)
+
+    def __init__(
+        self,
+        id: str = "",
+        title: str = "",
+        collection_type: str = "Arbitrary",
+        item_uuids: Optional[List[str]] = None,
+        search_query: str = "",
+        color_rgba: str = "0.2 0.6 0.8 1.0",
+        search_settings: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        self.id = id or kwargs.get("collection_id", "")
+        self.title = title
+        self.collection_type = collection_type if collection_type != "Arbitrary" else kwargs.get("type", "Arbitrary")
+        self.item_uuids = item_uuids if item_uuids is not None else []
+        self.search_query = search_query
+        self.color_rgba = color_rgba
+        self.search_settings = search_settings if search_settings is not None else {}
+
+    @property
+    def collection_id(self) -> str:
+        return self.id
+
+    @collection_id.setter
+    def collection_id(self, val: str):
+        self.id = val
+
+    @property
+    def type(self) -> str:
+        return self.collection_type
+
+    @type.setter
+    def type(self, val: str):
+        self.collection_type = val
 
 class ScrivenerXMLParser:
     """Parser bidireccional para esquemas XML .scrivx y .escrx."""
