@@ -33,6 +33,8 @@ set(SOURCES
     src/themes/ThemeEngine.cpp
     src/ui/BinderWidget.hpp
     src/ui/BinderWidget.cpp
+    src/ui/EditorWidget.hpp
+    src/ui/EditorWidget.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc

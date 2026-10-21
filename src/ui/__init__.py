@@ -14,6 +14,21 @@ from .BinderWidget import (
     IconLibrary,
     UndoStack
 )
+from .EditorWidget import (
+    EditorWidget,
+    FormatToolbar,
+    TextFormatState,
+    RulerBar,
+    PageViewEngine,
+    EditorViewMode,
+    LinguisticFocusEngine,
+    LinguisticCategory,
+    FocusModeEngine,
+    FocusScope,
+    InvisiblesEngine,
+    ScrivenerLinksEngine,
+    TableManager
+)
 from .editor_rtf import RTFEditorView
 from .split_view import SplitContainer
 from .corkboard import CorkboardView
@@ -30,6 +45,19 @@ __all__ = [
     "CollectionsManager",
     "IconLibrary",
     "UndoStack",
+    "EditorWidget",
+    "FormatToolbar",
+    "TextFormatState",
+    "RulerBar",
+    "PageViewEngine",
+    "EditorViewMode",
+    "LinguisticFocusEngine",
+    "LinguisticCategory",
+    "FocusModeEngine",
+    "FocusScope",
+    "InvisiblesEngine",
+    "ScrivenerLinksEngine",
+    "TableManager",
     "RTFEditorView",
     "SplitContainer",
     "CorkboardView",
