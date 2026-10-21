@@ -1,0 +1,11 @@
+{
+    "app_name": "Escritorio",
+    "version": "1.0.0",
+    "portable_mode": true,
+    "system_registry_access": false,
+    "appdata_redirection": "./portable_config/settings",
+    "backups_path": "./portable_config/backups",
+    "default_autosave_ms": 2000,
+    "platform": "win32-x64",
+    "target_os": "Windows 11"
+}

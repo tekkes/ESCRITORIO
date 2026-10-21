@@ -1,0 +1,23 @@
+﻿{
+    "base_theme":  "Dark",
+    "palette":  {
+                    "outliner.grid":  "#434c5e",
+                    "editor.caret":  "#88c0d0",
+                    "window.foreground":  "#d8dee9",
+                    "editor.background":  "#2e3440",
+                    "binder.foreground":  "#e5e9f0",
+                    "corkboard.card_bg":  "#434c5e",
+                    "inspector.background":  "#242933",
+                    "binder.selected_fg":  "#eceff4",
+                    "binder.background":  "#242933",
+                    "editor.selection":  "#4c566a",
+                    "corkboard.card_fg":  "#eceff4",
+                    "binder.selected_bg":  "#434c5e",
+                    "window.background":  "#2e3440",
+                    "corkboard.background":  "#3b4252",
+                    "editor.foreground":  "#eceff4"
+                },
+    "name":  "Minimal Nord",
+    "author":  "Escritorio Design System",
+    "version":  "1.0.0"
+}

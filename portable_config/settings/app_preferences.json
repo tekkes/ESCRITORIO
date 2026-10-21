@@ -1,0 +1,11 @@
+{
+    "active_theme": "dark_obsidian",
+    "font_family": "Segoe UI Variable Display",
+    "editor_font_family": "Georgia",
+    "editor_font_size": 13,
+    "line_height": 1.4,
+    "typewriter_scrolling": true,
+    "auto_backup_on_close": true,
+    "max_backup_copies": 5,
+    "recent_projects": []
+}

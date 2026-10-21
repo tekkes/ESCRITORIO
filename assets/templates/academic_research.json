@@ -1,0 +1,48 @@
+﻿{
+    "target_words":  30000,
+    "description":  "Estructura IMRyD (Introducción, Metodología, Resultados y Discusión).",
+    "name":  "Investigación Académica (Paper / Tesis)",
+    "structure":  [
+                      {
+                          "title":  "0. Resumen (Abstract)",
+                          "section_type":  "FrontMatter",
+                          "type":  "Text"
+                      },
+                      {
+                          "title":  "1. Introducción",
+                          "section_type":  "Chapter",
+                          "type":  "Text"
+                      },
+                      {
+                          "title":  "2. Metodología",
+                          "section_type":  "Chapter",
+                          "type":  "Text"
+                      },
+                      {
+                          "title":  "3. Resultados",
+                          "section_type":  "Chapter",
+                          "type":  "Text"
+                      },
+                      {
+                          "title":  "4. Discusión y Conclusiones",
+                          "section_type":  "Chapter",
+                          "type":  "Text"
+                      }
+                  ],
+    "research":  [
+                     {
+                         "title":  "Conjuntos de Datos",
+                         "type":  "Folder",
+                         "children":  [
+
+                                      ]
+                     },
+                     {
+                         "title":  "Referencias BibTeX",
+                         "type":  "Folder",
+                         "children":  [
+
+                                      ]
+                     }
+                 ]
+}

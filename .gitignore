@@ -1,0 +1,54 @@
+# ==========================================
+# .gitignore - Escritorio (Portable Win11)
+# ==========================================
+
+# Directorios de compilación intermedia y artefactos binarios
+/build/
+/target/
+/dist/
+/out/
+/bin/
+/obj/
+.vs/
+.vscode/
+
+# Archivos temporales, swap y bloqueos
+*.tmp
+*.tmp_*
+*.temp
+*.lock
+*~
+~$*
+
+# Python caches y virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Node / JS
+node_modules/
+npm-debug.log*
+
+# Backups locales portables (excluir archivos ZIP de respaldo)
+portable_config/backups/*.zip
+!portable_config/backups/.gitkeep
+
+# Archivos de sistema operativo Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs de depuración
+*.log
+
+# Antigravity local secrets / tokens
+.agents/mcp_config.json
+

@@ -1,0 +1,23 @@
+﻿{
+    "base_theme":  "Light",
+    "palette":  {
+                    "outliner.grid":  "#e0d9c4",
+                    "editor.caret":  "#b58900",
+                    "window.foreground":  "#657b83",
+                    "editor.background":  "#fdf6e3",
+                    "binder.foreground":  "#586e75",
+                    "corkboard.card_bg":  "#fffbf0",
+                    "inspector.background":  "#eee8d5",
+                    "binder.selected_fg":  "#073642",
+                    "binder.background":  "#eee8d5",
+                    "editor.selection":  "#eee8d5",
+                    "corkboard.card_fg":  "#586e75",
+                    "binder.selected_bg":  "#e0d9c4",
+                    "window.background":  "#fdf6e3",
+                    "corkboard.background":  "#e8e0cc",
+                    "editor.foreground":  "#073642"
+                },
+    "name":  "Solarized Warm",
+    "author":  "Escritorio Design System",
+    "version":  "1.0.0"
+}

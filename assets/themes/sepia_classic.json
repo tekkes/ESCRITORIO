@@ -1,0 +1,23 @@
+﻿{
+    "base_theme":  "Sepia",
+    "palette":  {
+                    "outliner.grid":  "#e0caa0",
+                    "editor.caret":  "#8b5a2b",
+                    "window.foreground":  "#5f4b32",
+                    "editor.background":  "#fef7e9",
+                    "binder.foreground":  "#493824",
+                    "corkboard.card_bg":  "#fff9eb",
+                    "inspector.background":  "#f4e4c1",
+                    "binder.selected_fg":  "#2c2013",
+                    "binder.background":  "#f4e4c1",
+                    "editor.selection":  "#e6d2a7",
+                    "corkboard.card_fg":  "#493824",
+                    "binder.selected_bg":  "#e6d2a7",
+                    "window.background":  "#fbf0d9",
+                    "corkboard.background":  "#edd8b1",
+                    "editor.foreground":  "#3b2d1d"
+                },
+    "name":  "Sepia Classic",
+    "author":  "Escritorio Design System",
+    "version":  "1.0.0"
+}

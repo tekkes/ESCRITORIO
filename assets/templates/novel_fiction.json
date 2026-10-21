@@ -1,0 +1,65 @@
+﻿{
+    "target_words":  75000,
+    "description":  "Plantilla estándar para novela con capítulos, escenas, fichas de personajes y ubicaciones.",
+    "name":  "Novela de Ficción",
+    "structure":  [
+                      {
+                          "title":  "Capítulo 1",
+                          "section_type":  "Chapter",
+                          "type":  "Folder",
+                          "children":  [
+                                           {
+                                               "title":  "Escena 1.1: Inicio",
+                                               "target_words":  2000,
+                                               "section_type":  "Scene",
+                                               "type":  "Text"
+                                           },
+                                           {
+                                               "title":  "Escena 1.2: Incidente",
+                                               "target_words":  2500,
+                                               "section_type":  "Scene",
+                                               "type":  "Text"
+                                           }
+                                       ]
+                      },
+                      {
+                          "title":  "Capítulo 2",
+                          "section_type":  "Chapter",
+                          "type":  "Folder",
+                          "children":  [
+                                           {
+                                               "title":  "Escena 2.1: Desarrollo",
+                                               "target_words":  2200,
+                                               "section_type":  "Scene",
+                                               "type":  "Text"
+                                           }
+                                       ]
+                      }
+                  ],
+    "research":  [
+                     {
+                         "title":  "Personajes",
+                         "type":  "Folder",
+                         "children":  [
+                                          {
+                                              "type":  "Text",
+                                              "title":  "Protagonista"
+                                          },
+                                          {
+                                              "type":  "Text",
+                                              "title":  "Antagonista"
+                                          }
+                                      ]
+                     },
+                     {
+                         "title":  "Lugares y Escenarios",
+                         "type":  "Folder",
+                         "children":  [
+                                          {
+                                              "type":  "Text",
+                                              "title":  "Ciudad Principal"
+                                          }
+                                      ]
+                     }
+                 ]
+}

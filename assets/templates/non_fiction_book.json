@@ -1,0 +1,52 @@
+﻿{
+    "target_words":  45000,
+    "description":  "Estructura formal para libros divulgativos, técnicos o ensayos con bibliografía.",
+    "name":  "Ensayo / No Ficción",
+    "structure":  [
+                      {
+                          "title":  "Introducción",
+                          "section_type":  "Chapter",
+                          "type":  "Folder",
+                          "children":  [
+                                           {
+                                               "title":  "Tesis y Contexto",
+                                               "section_type":  "Section",
+                                               "type":  "Text"
+                                           }
+                                       ]
+                      },
+                      {
+                          "title":  "Parte I: Fundamentos",
+                          "section_type":  "Chapter",
+                          "type":  "Folder",
+                          "children":  [
+                                           {
+                                               "title":  "Sección 1: Antecedentes",
+                                               "section_type":  "Section",
+                                               "type":  "Text"
+                                           },
+                                           {
+                                               "title":  "Sección 2: Análisis",
+                                               "section_type":  "Section",
+                                               "type":  "Text"
+                                           }
+                                       ]
+                      }
+                  ],
+    "research":  [
+                     {
+                         "title":  "Bibliografía y Citas",
+                         "type":  "Folder",
+                         "children":  [
+
+                                      ]
+                     },
+                     {
+                         "title":  "Entrevistas y Fuentes",
+                         "type":  "Folder",
+                         "children":  [
+
+                                      ]
+                     }
+                 ]
+}

@@ -1,0 +1,23 @@
+﻿{
+    "base_theme":  "Light",
+    "palette":  {
+                    "outliner.grid":  "#e0e0e0",
+                    "editor.caret":  "#0066cc",
+                    "window.foreground":  "#111111",
+                    "editor.background":  "#ffffff",
+                    "binder.foreground":  "#222222",
+                    "corkboard.card_bg":  "#fffffc",
+                    "inspector.background":  "#edf0f2",
+                    "binder.selected_fg":  "#000000",
+                    "binder.background":  "#e8ebed",
+                    "editor.selection":  "#b4d5fe",
+                    "corkboard.card_fg":  "#222222",
+                    "binder.selected_bg":  "#c8d4df",
+                    "window.background":  "#f3f3f3",
+                    "corkboard.background":  "#d8cfbe",
+                    "editor.foreground":  "#111111"
+                },
+    "name":  "Scrivener Classic Light",
+    "author":  "Literature \u0026 Latte Replica",
+    "version":  "1.0.0"
+}

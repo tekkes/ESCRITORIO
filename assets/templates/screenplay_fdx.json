@@ -1,0 +1,33 @@
+﻿{
+    "target_words":  20000,
+    "description":  "Plantilla estándar de guion audiovisual con formato de escenas y acciones.",
+    "name":  "Guion Cinematográfico",
+    "structure":  [
+                      {
+                          "title":  "Secuencia 1: Planteamiento",
+                          "section_type":  "Chapter",
+                          "type":  "Folder",
+                          "children":  [
+                                           {
+                                               "title":  "ESC. 1 - INT. CAFETERÍA - DÍA",
+                                               "section_type":  "Scene",
+                                               "type":  "Text"
+                                           },
+                                           {
+                                               "title":  "ESC. 2 - EXT. CALLE - CONTINUO",
+                                               "section_type":  "Scene",
+                                               "type":  "Text"
+                                           }
+                                       ]
+                      }
+                  ],
+    "research":  [
+                     {
+                         "title":  "Tratamiento y Biblia",
+                         "type":  "Folder",
+                         "children":  [
+
+                                      ]
+                     }
+                 ]
+}

@@ -1,0 +1,38 @@
+{
+    "mcpServers": {
+        "rea": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "rea-agents@latest",
+                "mcp"
+            ],
+            "cwd": "M:\\61_PROYECTOS_IA\\18_ESCRITORIO",
+            "env": {
+                "REA_MAX_OUTPUT_MIB": "4",
+                "REA_EVIDENCE_STRICT": "true",
+                "REA_PLATFORM": "win32-x64",
+                "REA_WORKSPACE": "M:\\61_PROYECTOS_IA\\18_ESCRITORIO"
+            }
+        },
+        "github": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "cwd": "M:\\61_PROYECTOS_IA\\18_ESCRITORIO",
+            "env": {
+                "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_GITHUB_PERSONAL_ACCESS_TOKEN>",
+                "GITHUB_OWNER": "tekkes",
+                "GITHUB_REPO": "ESCRITORIO"
+            }
+        }
+    },
+    "permissions": {
+        "allow": [
+            "mcp(rea/*)",
+            "mcp(github/*)"
+        ]
+    }
+}

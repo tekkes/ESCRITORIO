@@ -1,0 +1,23 @@
+﻿{
+    "base_theme":  "Dark",
+    "palette":  {
+                    "outliner.grid":  "#2e2e38",
+                    "editor.caret":  "#6366f1",
+                    "window.foreground":  "#e0e0e6",
+                    "editor.background":  "#141416",
+                    "binder.foreground":  "#c8c8d0",
+                    "corkboard.card_bg":  "#2a2b36",
+                    "inspector.background":  "#18181c",
+                    "binder.selected_fg":  "#ffffff",
+                    "binder.background":  "#18181c",
+                    "editor.selection":  "#3b4252",
+                    "corkboard.card_fg":  "#e2e8f0",
+                    "binder.selected_bg":  "#2d3748",
+                    "window.background":  "#1e1e24",
+                    "corkboard.background":  "#23232a",
+                    "editor.foreground":  "#d4d4d8"
+                },
+    "name":  "Dark Obsidian",
+    "author":  "Escritorio Design System",
+    "version":  "1.0.0"
+}
