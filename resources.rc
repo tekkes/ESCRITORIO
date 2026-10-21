@@ -1,0 +1,40 @@
+#include <windows.h>
+
+#define IDI_APPICON 101
+
+// 1. Manifiesto de Windows 11 embebido (RT_MANIFEST = 24, ID = 1)
+1 24 "app.manifest"
+
+// 2. Información de versión
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+FILEFLAGS       VS_FF_DEBUG
+#else
+FILEFLAGS       0x0L
+#endif
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "0c0a04b0" // Español (España tradicional), Unicode
+        BEGIN
+            VALUE "CompanyName",      "tekkes"
+            VALUE "FileDescription",  "Escritorio - Estación de Trabajo Editorial Nativa Portable"
+            VALUE "FileVersion",      "1.0.0.0"
+            VALUE "InternalName",     "Escritorio"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 tekkes. Todos los derechos reservados."
+            VALUE "OriginalFilename", "Escritorio.exe"
+            VALUE "ProductName",      "Escritorio"
+            VALUE "ProductVersion",   "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0c0a, 1200
+    END
+END
