@@ -25,6 +25,10 @@ set(SOURCES
     src/main.cpp
     src/core/PortableManager.hpp
     src/core/PortableManager.cpp
+    src/core/ProjectEngine.hpp
+    src/core/ProjectEngine.cpp
+    src/core/BackupManager.hpp
+    src/core/BackupManager.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc
