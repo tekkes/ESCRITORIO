@@ -20,6 +20,7 @@ from .corkboard import CorkboardView
 from .outliner import OutlinerView
 from .inspector import InspectorView
 from .composition_mode import CompositionMode
+from .CompileDialog import CompileDialog
 
 from .ScriveningsEngine import ScriveningsEngine, DividerStyle
 from .SplitEditorManager import SplitEditorManager, SplitLayoutMode, QuickReferenceManager, QuickReferenceWindow
@@ -59,6 +60,7 @@ class MainWindow:
         self.outliner = OutlinerView()
         self.inspector = InspectorView()
         self.composition_mode = CompositionMode(self.split_container.primary_editor)
+        self.compile_dialog = CompileDialog(project) if project else None
 
         self.current_view_mode = CentralViewMode.EDITOR
         self.inspector_visible: bool = True
@@ -258,6 +260,13 @@ class MainWindow:
 
     def toggle_composition_mode(self):
         self.composition_mode.toggle()
+
+    def toggle_compile_dialog(self) -> bool:
+        if not self.compile_dialog and self.project:
+            self.compile_dialog = CompileDialog(self.project)
+        if self.compile_dialog:
+            return self.compile_dialog.toggle()
+        return False
 
     def set_theme(self, mode: Union[ThemeMode, str]) -> float:
         if isinstance(mode, str):

@@ -117,6 +117,16 @@ from .CompositionMode import (
     BottomControlBar,
     GoToItem
 )
+from .CompileDialog import (
+    CompileDialog,
+    RightPanelTab,
+    FormatsColumn,
+    FormatCategory,
+    SectionLayoutsColumn,
+    ContentsTab,
+    MetadataTab,
+    ReplacementsTab
+)
 
 __all__ = [
     "MainWindow",
@@ -208,4 +218,12 @@ __all__ = [
     "TabCommentsFootnotes",
     "CommentItem",
     "CompositionMode",
+    "CompileDialog",
+    "RightPanelTab",
+    "FormatsColumn",
+    "FormatCategory",
+    "SectionLayoutsColumn",
+    "ContentsTab",
+    "MetadataTab",
+    "ReplacementsTab",
 ]

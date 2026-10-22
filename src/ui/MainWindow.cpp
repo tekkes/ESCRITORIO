@@ -164,6 +164,11 @@ void MainWindow::ToggleProjectTargets() {
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
+void MainWindow::ToggleCompileDialog() {
+    m_isCompileDialogOpen = !m_isCompileDialogOpen;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
 bool MainWindow::Create(HINSTANCE hInstance, int nCmdShow, double startupTimeMs) {
     m_hInstance = hInstance;
     m_startupTimeMs = startupTimeMs;
@@ -354,6 +359,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (ctrl && shift && (wParam == 'T' || wParam == 't')) { // Ctrl+Shift+T: Objetivos de Proyecto (Project Targets)
             ToggleProjectTargets();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'E' || wParam == 'e')) { // Ctrl+Shift+E: Diálogo de Compilación (Compile Dialog)
+            ToggleCompileDialog();
+            return 0;
+        }
+        if (wParam == VK_ESCAPE && m_isCompileDialogOpen) { // Esc: Salir de Compilación
+            ToggleCompileDialog();
             return 0;
         }
 
@@ -804,6 +817,9 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     if (m_isProjectTargetsOpen) {
         ssLeft << L" | [METAS: Ctrl+Shift+T]";
     }
+    if (m_isCompileDialogOpen) {
+        ssLeft << L" | [COMPILAR: Ctrl+Shift+E]";
+    }
     ssLeft << L" | Formato: .escr / .scrivx compatible";
     std::wstring strLeft = ssLeft.str();
 
@@ -826,6 +842,11 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     // Ventana flotante de Metas de Proyecto
     if (m_isProjectTargetsOpen) {
         RenderProjectTargetsDialog(hdc, width, height, pal);
+    }
+
+    // Diálogo de Compilación de 3 Columnas de Scrivener 3
+    if (m_isCompileDialogOpen) {
+        RenderCompileDialog(hdc, width, height, pal);
     }
 }
 
@@ -893,6 +914,221 @@ void MainWindow::RenderProjectTargetsDialog(HDC hdc, int width, int height, cons
         L"Cuota Diaria Requerida: 998 palabras/sesión\n"
         L"Ritmo: En Curso (Ritmo adecuado)  |  [ Cerrar: Ctrl+Shift+T ]";
     DrawTextW(hdc, deadlineInfo, -1, &rcDeadline, DT_LEFT | DT_WORDBREAK);
+
+    SelectObject(hdc, hOldPen);
+}
+
+void MainWindow::RenderCompileDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal) {
+    int dlgW = (std::min)(860, width - 60);
+    int dlgH = (std::min)(540, height - 60);
+    int dlgLeft = (width - dlgW) / 2;
+    int dlgTop = (height - dlgH) / 2;
+    RECT rcDlg = { dlgLeft, dlgTop, dlgLeft + dlgW, dlgTop + dlgH };
+
+    // Fondo y marco redondeado del diálogo de compilación
+    HBRUSH hBrDlg = CreateSolidBrush(pal.inspectorBg);
+    FillRect(hdc, &rcDlg, hBrDlg);
+    DeleteObject(hBrDlg);
+
+    HPEN hPenBorder = CreatePen(PS_SOLID, 2, pal.accentPrimary);
+    HPEN hOldPen = (HPEN)SelectObject(hdc, hPenBorder);
+    Rectangle(hdc, rcDlg.left, rcDlg.top, rcDlg.right, rcDlg.bottom);
+    DeleteObject(hPenBorder);
+
+    // Barra de título del diálogo
+    int headerH = 38;
+    RECT rcHeader = { dlgLeft + 16, dlgTop + 10, dlgLeft + dlgW - 16, dlgTop + 32 };
+    SelectObject(hdc, m_hFontTitle);
+    SetTextColor(hdc, pal.accentPrimary);
+    SetBkMode(hdc, TRANSPARENT);
+    DrawTextW(hdc, L"📦 Compilar Manuscrito (Ctrl+Shift+E) — Scrivener 3 Compile Workstation", -1, &rcHeader, DT_LEFT | DT_SINGLELINE);
+
+    // Separador horizontal bajo la cabecera
+    HPEN hPenSep = CreatePen(PS_SOLID, 1, pal.windowBorder);
+    SelectObject(hdc, hPenSep);
+    MoveToEx(hdc, dlgLeft, dlgTop + headerH, nullptr);
+    LineTo(hdc, dlgLeft + dlgW, dlgTop + headerH);
+
+    // =========================================================================
+    // Distribución de las 3 Columnas
+    // =========================================================================
+    int contentTop = dlgTop + headerH + 8;
+    int bottomBarH = 48;
+    int contentBottom = dlgTop + dlgH - bottomBarH;
+
+    int col1W = 230;
+    int col2W = 300;
+    int col3W = dlgW - col1W - col2W - 24;
+
+    int col1Left = dlgLeft + 8;
+    int col2Left = col1Left + col1W + 4;
+    int col3Left = col2Left + col2W + 4;
+
+    HBRUSH hBrCol = CreateSolidBrush(pal.editorBg);
+
+    // -------------------------------------------------------------------------
+    // COLUMNA 1: Formatos de Compilación
+    // -------------------------------------------------------------------------
+    RECT rcCol1 = { col1Left, contentTop, col1Left + col1W, contentBottom };
+    FillRect(hdc, &rcCol1, hBrCol);
+    Rectangle(hdc, rcCol1.left, rcCol1.top, rcCol1.right, rcCol1.bottom);
+
+    RECT rcCol1Title = { col1Left + 10, contentTop + 8, col1Left + col1W - 10, contentTop + 24 };
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.accentPrimary);
+    DrawTextW(hdc, L"FORMATOS INTEGRADOS", -1, &rcCol1Title, DT_LEFT | DT_SINGLELINE);
+
+    const wchar_t* formats[] = {
+        L"● Manuscrito Estándar [DOCX]",
+        L"○ Novela Moderna [PDF]",
+        L"○ Libro de Bolsillo 6x9 [PDF]",
+        L"○ Ebook Estándar [EPUB 3]",
+        L"○ Guion Hollywood [FDX]",
+        L"○ Ensayo Académico APA [DOCX]",
+        L"○ Esquema de Sinopsis [MD]"
+    };
+
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.windowFg);
+    for (int i = 0; i < 7; ++i) {
+        RECT rcItem = { col1Left + 12, contentTop + 32 + (i * 24), col1Left + col1W - 8, contentTop + 54 + (i * 24) };
+        if (i == 0) {
+            SetTextColor(hdc, pal.accentPrimary);
+        } else {
+            SetTextColor(hdc, pal.windowFg);
+        }
+        DrawTextW(hdc, formats[i], -1, &rcItem, DT_LEFT | DT_SINGLELINE);
+    }
+
+    // Botón Diseñador de Formatos al pie de Columna 1
+    RECT rcBtnDesigner = { col1Left + 10, contentBottom - 34, col1Left + col1W - 10, contentBottom - 8 };
+    HBRUSH hBrBtn = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBtnDesigner, hBrBtn);
+    DeleteObject(hBrBtn);
+    FrameRect(hdc, &rcBtnDesigner, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"⚙ Diseñador de Formatos...", -1, &rcBtnDesigner, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    // -------------------------------------------------------------------------
+    // COLUMNA 2: Diseños de Sección (Section Layouts)
+    // -------------------------------------------------------------------------
+    RECT rcCol2 = { col2Left, contentTop, col2Left + col2W, contentBottom };
+    FillRect(hdc, &rcCol2, hBrCol);
+    Rectangle(hdc, rcCol2.left, rcCol2.top, rcCol2.right, rcCol2.bottom);
+
+    RECT rcCol2Title = { col2Left + 10, contentTop + 8, col2Left + col2W - 10, contentTop + 24 };
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.accentPrimary);
+    DrawTextW(hdc, L"MAPEO DE SECTION LAYOUTS", -1, &rcCol2Title, DT_LEFT | DT_SINGLELINE);
+
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.windowFg);
+    const wchar_t* mappings[] = {
+        L"Part      →  Título de Parte",
+        L"Chapter   →  Encabezado Numerado",
+        L"Scene     →  Texto de Escena",
+        L"Heading   →  Encabezado Jerárquico"
+    };
+    for (int i = 0; i < 4; ++i) {
+        RECT rcMap = { col2Left + 12, contentTop + 32 + (i * 22), col2Left + col2W - 8, contentTop + 52 + (i * 22) };
+        DrawTextW(hdc, mappings[i], -1, &rcMap, DT_LEFT | DT_SINGLELINE);
+    }
+
+    // Cuadro de Previsualización Tipográfica en Columna 2
+    RECT rcPreview = { col2Left + 10, contentTop + 130, col2Left + col2W - 10, contentBottom - 44 };
+    HBRUSH hBrPrev = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcPreview, hBrPrev);
+    DeleteObject(hBrPrev);
+    FrameRect(hdc, &rcPreview, (HBRUSH)GetStockObject(BLACK_BRUSH));
+
+    RECT rcPrevText = { rcPreview.left + 8, rcPreview.top + 8, rcPreview.right - 8, rcPreview.bottom - 8 };
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.accentPrimary);
+    const wchar_t* previewText =
+        L"CAPÍTULO <$n>: <$title>\n\n"
+        L"    La noche avanzaba sobre el observatorio. Los motores de cálculo "
+        L"resonaban en la cámara presurizada...";
+    DrawTextW(hdc, previewText, -1, &rcPrevText, DT_LEFT | DT_WORDBREAK);
+
+    // Botón Asignar Section Layouts
+    RECT rcBtnAssign = { col2Left + 10, contentBottom - 34, col2Left + col2W - 10, contentBottom - 8 };
+    hBrBtn = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBtnAssign, hBrBtn);
+    DeleteObject(hBrBtn);
+    FrameRect(hdc, &rcBtnAssign, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"⎘ Asignar Section Layouts...", -1, &rcBtnAssign, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    // -------------------------------------------------------------------------
+    // COLUMNA 3: Pestañas de Contenidos, Metadatos y Reemplazos
+    // -------------------------------------------------------------------------
+    RECT rcCol3 = { col3Left, contentTop, col3Left + col3W, contentBottom };
+    FillRect(hdc, &rcCol3, hBrCol);
+    Rectangle(hdc, rcCol3.left, rcCol3.top, rcCol3.right, rcCol3.bottom);
+    DeleteObject(hBrCol);
+
+    // Cabecera de pestañas de Columna 3
+    RECT rcTabHeader = { col3Left + 8, contentTop + 6, col3Left + col3W - 8, contentTop + 26 };
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.accentPrimary);
+    DrawTextW(hdc, L"[ Contenidos ]   |   Metadatos   |   Reemplazos", -1, &rcTabHeader, DT_LEFT | DT_SINGLELINE);
+
+    // Árbol de Contenidos a compilar
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.windowFg);
+    const wchar_t* contentsTree[] = {
+        L"[☑] Todo el Manuscrito (Borrador)",
+        L"    [☑] Capítulo 1: El Despegue",
+        L"        [☑] Escena 1: Ignición",
+        L"        [☑] Escena 2: Órbita",
+        L"    [☑] Capítulo 2: La Travesía",
+        L"[☑] Front Matter (Portadilla, Créditos)",
+        L"[☑] Back Matter (Epílogo, Sobre el autor)"
+    };
+    for (int i = 0; i < 7; ++i) {
+        RECT rcTreeItem = { col3Left + 12, contentTop + 34 + (i * 22), col3Left + col3W - 8, contentTop + 54 + (i * 22) };
+        DrawTextW(hdc, contentsTree[i], -1, &rcTreeItem, DT_LEFT | DT_SINGLELINE);
+    }
+
+    // Filtros de Contenidos
+    RECT rcFilters = { col3Left + 12, contentBottom - 50, col3Left + col3W - 12, contentBottom - 8 };
+    SelectObject(hdc, m_hFontMicro);
+    SetTextColor(hdc, pal.statusBarFg);
+    const wchar_t* filterText =
+        L"Filtro: Todas las Etiquetas  |  Todos los Estados\n"
+        L"Total a compilar: 142 palabras (~1 página estimada)";
+    DrawTextW(hdc, filterText, -1, &rcFilters, DT_LEFT | DT_WORDBREAK);
+
+    // =========================================================================
+    // Barra de Acción Inferior
+    // =========================================================================
+    SelectObject(hdc, hPenSep);
+    MoveToEx(hdc, dlgLeft, contentBottom + 4, nullptr);
+    LineTo(hdc, dlgLeft + dlgW, contentBottom + 4);
+    DeleteObject(hPenSep);
+
+    // Selector de Formato de Exportación
+    RECT rcTarget = { dlgLeft + 16, contentBottom + 12, dlgLeft + 300, dlgTop + dlgH - 12 };
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"Compilar para:  [ DOCX (Microsoft Word) ▾ ]", -1, &rcTarget, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+    // Botones Cancelar y Compilar
+    RECT rcBtnCancel = { dlgLeft + dlgW - 220, contentBottom + 10, dlgLeft + dlgW - 120, dlgTop + dlgH - 10 };
+    HBRUSH hBrCancel = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBtnCancel, hBrCancel);
+    DeleteObject(hBrCancel);
+    FrameRect(hdc, &rcBtnCancel, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    DrawTextW(hdc, L"Cancelar", -1, &rcBtnCancel, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    RECT rcBtnCompile = { dlgLeft + dlgW - 110, contentBottom + 10, dlgLeft + dlgW - 16, dlgTop + dlgH - 10 };
+    HBRUSH hBrCompile = CreateSolidBrush(pal.accentPrimary);
+    FillRect(hdc, &rcBtnCompile, hBrCompile);
+    DeleteObject(hBrCompile);
+    SetTextColor(hdc, RGB(255, 255, 255));
+    DrawTextW(hdc, L"Compilar", -1, &rcBtnCompile, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     SelectObject(hdc, hOldPen);
 }

@@ -61,6 +61,7 @@ public:
     void ToggleInspector();
     void ToggleCompositionMode();
     void ToggleProjectTargets();
+    void ToggleCompileDialog();
 
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
@@ -70,6 +71,7 @@ public:
     bool IsInspectorVisible() const { return m_isInspectorVisible; }
     bool IsCompositionMode() const { return m_isCompositionMode; }
     bool IsProjectTargetsOpen() const { return m_isProjectTargetsOpen; }
+    bool IsCompileDialogOpen() const { return m_isCompileDialogOpen; }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -79,6 +81,7 @@ private:
     void OnPaint(HDC hdc);
     void RenderUI(HDC hdc, const RECT& clientRect);
     void RenderProjectTargetsDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
+    void RenderCompileDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
@@ -97,6 +100,9 @@ private:
     bool m_isInspectorVisible = true;
     bool m_isCompositionMode = false;
     bool m_isProjectTargetsOpen = false;
+    bool m_isCompileDialogOpen = false;
+    int m_compileSelectedFormatIndex = 0;
+    int m_compileSelectedTab = 0;
     int m_compositionPaperWidthPercent = 65;
     float m_compositionBackgroundFade = 0.85f;
     RECT m_rcInspector = {};
