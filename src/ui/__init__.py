@@ -110,7 +110,13 @@ from .InspectorWidget import (
     TabCommentsFootnotes,
     CommentItem
 )
-from .composition_mode import CompositionMode
+from .CompositionMode import (
+    CompositionMode,
+    CompositionPaperSettings,
+    PaperPosition,
+    BottomControlBar,
+    GoToItem
+)
 
 __all__ = [
     "MainWindow",

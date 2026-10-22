@@ -154,6 +154,16 @@ void MainWindow::ToggleInspector() {
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
+void MainWindow::ToggleCompositionMode() {
+    m_isCompositionMode = !m_isCompositionMode;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::ToggleProjectTargets() {
+    m_isProjectTargetsOpen = !m_isProjectTargetsOpen;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
 bool MainWindow::Create(HINSTANCE hInstance, int nCmdShow, double startupTimeMs) {
     m_hInstance = hInstance;
     m_startupTimeMs = startupTimeMs;
@@ -334,6 +344,18 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ToggleScriptwritingMode();
             return 0;
         }
+        if (wParam == VK_F11) { // F11: Modo Composición libre de distracciones
+            ToggleCompositionMode();
+            return 0;
+        }
+        if (wParam == VK_ESCAPE && m_isCompositionMode) { // Esc: Salir de Modo Composición
+            ToggleCompositionMode();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'T' || wParam == 't')) { // Ctrl+Shift+T: Objetivos de Proyecto (Project Targets)
+            ToggleProjectTargets();
+            return 0;
+        }
 
         if (wParam == VK_F8) { // F8 para ciclar temas instantáneamente
             CycleTheme();
@@ -415,6 +437,71 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
 
     const auto& pal = m_themeEngine->GetPalette();
     const auto& d = m_themeEngine->GetDensityMetrics();
+
+    if (m_isCompositionMode) {
+        // Fondo completo con fundido oscuro (Background Fade)
+        HBRUSH hBrBackdrop = CreateSolidBrush(RGB(15, 15, 18));
+        RECT rcScreen = { 0, 0, width, height };
+        FillRect(hdc, &rcScreen, hBrBackdrop);
+        DeleteObject(hBrBackdrop);
+
+        // Hoja de papel central de ancho ajustable (30% - 100%)
+        int paperW = (width * m_compositionPaperWidthPercent) / 100;
+        int paperLeft = (width - paperW) / 2;
+        int paperRight = paperLeft + paperW;
+        RECT rcPaper = { paperLeft, 0, paperRight, height - 48 };
+
+        HBRUSH hBrPaper = CreateSolidBrush(pal.editorBg);
+        FillRect(hdc, &rcPaper, hBrPaper);
+        DeleteObject(hBrPaper);
+
+        HPEN hPenPaper = CreatePen(PS_SOLID, 1, pal.windowBorder);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPenPaper);
+        MoveToEx(hdc, paperLeft, 0, nullptr);
+        LineTo(hdc, paperLeft, height - 48);
+        MoveToEx(hdc, paperRight - 1, 0, nullptr);
+        LineTo(hdc, paperRight - 1, height - 48);
+
+        // Texto del manuscrito centrado en la hoja
+        RECT rcText = { paperLeft + 48, 64, paperRight - 48, height - 80 };
+        SelectObject(hdc, m_hFontEditor);
+        SetTextColor(hdc, pal.editorFg);
+        SetBkMode(hdc, TRANSPARENT);
+        const wchar_t* sampleCompText =
+            L"Capítulo 1: El Despertar\n\n"
+            L"La noche caía sobre las torres antiguas con una quietud espectral. Todo comenzaba aquí, en "
+            L"este preciso instante en que el reloj de la catedral marcaba las doce campanadas. Las calles "
+            L"adoquinadas brillaban bajo una fina capa de lluvia recién caída, reflejando la tímida luz ámbar de "
+            L"las farolas de gas.\n\n"
+            L"Isabel apretó el abrigo contra su pecho y aceleró el paso. Sabía que cada segundo contaba antes "
+            L"de que las sombras volvieran a moverse entre los soportales de la plaza mayor. En el bolsillo interior, "
+            L"el cuaderno encuadernado en piel contenía las coordenadas que nadie más debía descubrir.";
+        DrawTextW(hdc, sampleCompText, -1, &rcText, DT_LEFT | DT_WORDBREAK);
+
+        // Barra de control inferior auto-ocultable (48px)
+        RECT rcBottomBar = { 0, height - 48, width, height };
+        HBRUSH hBrBar = CreateSolidBrush(pal.toolbarBg);
+        FillRect(hdc, &rcBottomBar, hBrBar);
+        DeleteObject(hBrBar);
+
+        MoveToEx(hdc, 0, height - 48, nullptr);
+        LineTo(hdc, width, height - 48);
+
+        SelectObject(hdc, m_hFontSmall);
+        SetTextColor(hdc, pal.toolbarFg);
+        RECT rcBarControls = { 20, height - 48, width - 20, height };
+        const wchar_t* barText =
+            L"[ Ancho: 65% ]  [ Pos: Centro ]  [ Zoom: 120% ]  [ Fundido: 85% ]  [ Go To... ]  [ Inspector HUD ]  |  Palabras: 142  |  [ Salir F11 / Esc ]";
+        DrawTextW(hdc, barText, -1, &rcBarControls, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+        SelectObject(hdc, hOldPen);
+        DeleteObject(hPenPaper);
+
+        if (m_isProjectTargetsOpen) {
+            RenderProjectTargetsDialog(hdc, width, height, pal);
+        }
+        return;
+    }
 
     int toolbarHeight = d.toolbarHeight;            // 28px en Ultra-compacto
     int editorHeaderHeight = d.editorHeaderHeight;  // 24px en Ultra-compacto
@@ -714,6 +801,9 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     if (m_isInspectorVisible && m_inspectorWidget) {
         ssLeft << L" | [INSPECTOR: P" << (static_cast<int>(m_inspectorWidget->GetActiveTab()) + 1) << L"]";
     }
+    if (m_isProjectTargetsOpen) {
+        ssLeft << L" | [METAS: Ctrl+Shift+T]";
+    }
     ssLeft << L" | Formato: .escr / .scrivx compatible";
     std::wstring strLeft = ssLeft.str();
 
@@ -732,6 +822,79 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
 
     SelectObject(hdc, hOldPen);
     DeleteObject(hPenBorder);
+
+    // Ventana flotante de Metas de Proyecto
+    if (m_isProjectTargetsOpen) {
+        RenderProjectTargetsDialog(hdc, width, height, pal);
+    }
+}
+
+void MainWindow::RenderProjectTargetsDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal) {
+    int dlgW = 440;
+    int dlgH = 220;
+    int dlgLeft = (width - dlgW) / 2;
+    int dlgTop = (height - dlgH) / 2;
+    RECT rcDlg = { dlgLeft, dlgTop, dlgLeft + dlgW, dlgTop + dlgH };
+
+    // Fondo del cuadro de diálogo flotante
+    HBRUSH hBrDlg = CreateSolidBrush(pal.inspectorBg);
+    FillRect(hdc, &rcDlg, hBrDlg);
+    DeleteObject(hBrDlg);
+
+    HPEN hPenDlg = CreatePen(PS_SOLID, 2, pal.accentPrimary);
+    HPEN hOldPen = (HPEN)SelectObject(hdc, hPenDlg);
+    Rectangle(hdc, rcDlg.left, rcDlg.top, rcDlg.right, rcDlg.bottom);
+    DeleteObject(hPenDlg);
+
+    // Cabecera del diálogo
+    RECT rcTitle = { dlgLeft + 16, dlgTop + 12, dlgLeft + dlgW - 16, dlgTop + 34 };
+    SelectObject(hdc, m_hFontTitle);
+    SetTextColor(hdc, pal.accentPrimary);
+    SetBkMode(hdc, TRANSPARENT);
+    DrawTextW(hdc, L"🎯 Objetivos del Proyecto (Project Targets)", -1, &rcTitle, DT_LEFT | DT_SINGLELINE);
+
+    SelectObject(hdc, m_hFontSmall);
+
+    // Barra 1: Objetivo del Manuscrito
+    RECT rcDraftTitle = { dlgLeft + 16, dlgTop + 44, dlgLeft + dlgW - 16, dlgTop + 62 };
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"Objetivo del Manuscrito: 142 / 50.000 palabras (0.3%)", -1, &rcDraftTitle, DT_LEFT | DT_SINGLELINE);
+
+    RECT rcBar1Bg = { dlgLeft + 16, dlgTop + 64, dlgLeft + dlgW - 16, dlgTop + 78 };
+    HBRUSH hBrBarBg = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBar1Bg, hBrBarBg);
+    DeleteObject(hBrBarBg);
+
+    RECT rcBar1Fill = { dlgLeft + 16, dlgTop + 64, dlgLeft + 22, dlgTop + 78 };
+    HBRUSH hBrBar1 = CreateSolidBrush(RGB(239, 68, 68)); // Rojo progreso inicial
+    FillRect(hdc, &rcBar1Fill, hBrBar1);
+    DeleteObject(hBrBar1);
+
+    // Barra 2: Objetivo de la Sesión
+    RECT rcSessTitle = { dlgLeft + 16, dlgTop + 90, dlgLeft + dlgW - 16, dlgTop + 108 };
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"Objetivo de la Sesión: 142 / 1.500 palabras (9.5%)", -1, &rcSessTitle, DT_LEFT | DT_SINGLELINE);
+
+    RECT rcBar2Bg = { dlgLeft + 16, dlgTop + 110, dlgLeft + dlgW - 16, dlgTop + 124 };
+    HBRUSH hBrBar2Bg = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBar2Bg, hBrBar2Bg);
+    DeleteObject(hBrBar2Bg);
+
+    RECT rcBar2Fill = { dlgLeft + 16, dlgTop + 110, dlgLeft + 56, dlgTop + 124 };
+    HBRUSH hBrBar2 = CreateSolidBrush(RGB(245, 158, 11)); // Ámbar progreso sesión
+    FillRect(hdc, &rcBar2Fill, hBrBar2);
+    DeleteObject(hBrBar2);
+
+    // Calculadora de Fecha Límite y Cuota Diaria
+    RECT rcDeadline = { dlgLeft + 16, dlgTop + 138, dlgLeft + dlgW - 16, dlgTop + 204 };
+    SetTextColor(hdc, pal.statusBarFg);
+    const wchar_t* deadlineInfo =
+        L"Fecha Límite: 2026-12-31  |  Días de Escritura Restantes: 50\n"
+        L"Cuota Diaria Requerida: 998 palabras/sesión\n"
+        L"Ritmo: En Curso (Ritmo adecuado)  |  [ Cerrar: Ctrl+Shift+T ]";
+    DrawTextW(hdc, deadlineInfo, -1, &rcDeadline, DT_LEFT | DT_WORDBREAK);
+
+    SelectObject(hdc, hOldPen);
 }
 
 int MainWindow::RunMessageLoop() {

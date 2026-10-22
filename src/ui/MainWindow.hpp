@@ -59,6 +59,8 @@ public:
     void ToggleLockActivePane();
     void ToggleScriptwritingMode();
     void ToggleInspector();
+    void ToggleCompositionMode();
+    void ToggleProjectTargets();
 
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
@@ -66,6 +68,8 @@ public:
     OutlinerWidget* GetOutlinerWidget() { return m_outlinerWidget.get(); }
     InspectorWidget* GetInspectorWidget() { return m_inspectorWidget.get(); }
     bool IsInspectorVisible() const { return m_isInspectorVisible; }
+    bool IsCompositionMode() const { return m_isCompositionMode; }
+    bool IsProjectTargetsOpen() const { return m_isProjectTargetsOpen; }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -74,6 +78,7 @@ private:
     void ApplyWindows11Attributes();
     void OnPaint(HDC hdc);
     void RenderUI(HDC hdc, const RECT& clientRect);
+    void RenderProjectTargetsDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
@@ -90,6 +95,10 @@ private:
     bool m_isCorkboardActive = false;
     bool m_isOutlinerActive = false;
     bool m_isInspectorVisible = true;
+    bool m_isCompositionMode = false;
+    bool m_isProjectTargetsOpen = false;
+    int m_compositionPaperWidthPercent = 65;
+    float m_compositionBackgroundFade = 0.85f;
     RECT m_rcInspector = {};
 
     HFONT m_hFontTitle = nullptr;

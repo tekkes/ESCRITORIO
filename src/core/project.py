@@ -455,6 +455,10 @@ class EscritorioProject:
         """Obtiene un nodo del Binder por su UUID."""
         return self.items_by_uuid.get(uuid)
 
+    def get_all_items(self) -> List[BinderItem]:
+        """Devuelve una lista con todos los nodos Binder del proyecto."""
+        return list(self.items_by_uuid.values())
+
     def add_item(self, parent_uuid: str, title: str, item_type: str = "Text", item_uuid: Optional[str] = None) -> BinderItem:
         """Añade un nuevo nodo al árbol del Binder."""
         parent = self.get_item(parent_uuid)
