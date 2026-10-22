@@ -334,6 +334,14 @@ class EscritorioProject:
                 pass
             self._has_lock = False
 
+    def close(self):
+        """Guarda todos los cambios pendientes y libera el cerrojo del proyecto."""
+        try:
+            self.save_all()
+        except Exception:
+            pass
+        self.release_lock()
+
     # =========================================================================
     # Creación y Carga de Proyectos
     # =========================================================================
@@ -426,6 +434,11 @@ class EscritorioProject:
 
     def load(self, force_unlock: bool = False):
         """Carga el proyecto completo desde el archivo maestro y mapea el Binder."""
+        if isinstance(self, (str, Path)):
+            proj = EscritorioProject(self)
+            proj.load(force_unlock=force_unlock)
+            return proj
+
         if not self.project_file.exists():
             raise FileNotFoundError(f"No se encontró el archivo maestro del proyecto: {self.project_file}")
 
@@ -456,6 +469,8 @@ class EscritorioProject:
     def get_item(self, uuid: str) -> Optional[BinderItem]:
         """Obtiene un nodo del Binder por su UUID."""
         return self.items_by_uuid.get(uuid)
+
+    find_item = get_item
 
     def get_all_items(self) -> List[BinderItem]:
         """Devuelve una lista con todos los nodos Binder del proyecto."""

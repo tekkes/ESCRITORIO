@@ -429,6 +429,9 @@ class ThemeEngine:
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         return elapsed_ms
 
+    set_mode = set_builtin_mode
+    switch_theme = set_builtin_mode
+
     def set_density_mode(self, density: UIDensityMode):
         """Ajusta la densidad visual de la interfaz (Ultra-compacto, Compacto, Cómodo)."""
         self.density_mode = density

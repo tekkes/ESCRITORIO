@@ -95,6 +95,20 @@ class ScriveningsEngine:
         self.rebuild_composite_text()
         self.is_active = len(self.sections) > 0
 
+    load_items = load_from_binder_items
+
+    @property
+    def segments(self) -> List[ScriveningsSection]:
+        return self.sections
+
+    def get_composite_text(self) -> str:
+        return self.composite_text
+
+    def update_segment_text(self, index: int, new_text: str) -> bool:
+        if 0 <= index < len(self.sections):
+            return self.edit_section_content(self.sections[index].uuid, new_text)
+        return False
+
     def _flatten_item(self, item: BinderItem) -> List[BinderItem]:
         """Extrae recursivamente el nodo y sus hijos si corresponden al manuscrito."""
         result = [item]
