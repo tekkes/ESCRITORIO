@@ -41,6 +41,8 @@ set(SOURCES
     src/ui/SplitEditorManager.cpp
     src/ui/CorkboardWidget.hpp
     src/ui/CorkboardWidget.cpp
+    src/ui/OutlinerWidget.hpp
+    src/ui/OutlinerWidget.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc

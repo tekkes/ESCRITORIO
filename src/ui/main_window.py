@@ -77,6 +77,10 @@ class MainWindow:
     def corkboard_widget(self) -> CorkboardView:
         return self.corkboard
 
+    @property
+    def outliner_widget(self) -> OutlinerView:
+        return self.outliner
+
         # Conectar selección del binder con las vistas
         self.binder.on_selection_changed = self._on_binder_selection_changed
 
@@ -164,6 +168,23 @@ class MainWindow:
                 it = self.project.get_item(self.binder.selected_uuid)
                 if it:
                     self.corkboard.load_container(it)
+            return True
+
+    # =========================================================================
+    # Modo Esquema / Outliner (Ctrl+3)
+    # =========================================================================
+
+    def toggle_outliner_mode(self) -> bool:
+        """Alterna el modo Esquematizador (Ctrl+3)."""
+        if self.current_view_mode == CentralViewMode.OUTLINER:
+            self.current_view_mode = CentralViewMode.EDITOR
+            return False
+        else:
+            self.current_view_mode = CentralViewMode.OUTLINER
+            if self.binder.selected_uuid and self.project:
+                it = self.project.get_item(self.binder.selected_uuid)
+                if it:
+                    self.outliner.load_container(it)
             return True
 
     # =========================================================================

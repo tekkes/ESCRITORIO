@@ -11,6 +11,7 @@
 #include "ScriveningsEngine.hpp"
 #include "SplitEditorManager.hpp"
 #include "CorkboardWidget.hpp"
+#include "OutlinerWidget.hpp"
 
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "comctl32.lib")
@@ -49,6 +50,7 @@ public:
     // Nuevas funciones de Prompt 07 y Prompt 08
     void ToggleScrivenings();
     void ToggleCorkboard();
+    void ToggleOutliner();
     void SplitVertical();
     void SplitHorizontal();
     void SplitGrid();
@@ -59,6 +61,7 @@ public:
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
     CorkboardWidget* GetCorkboardWidget() { return m_corkboardWidget.get(); }
+    OutlinerWidget* GetOutlinerWidget() { return m_outlinerWidget.get(); }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -77,8 +80,10 @@ private:
     std::unique_ptr<ScriveningsEngine> m_scriveningsEngine;
     std::unique_ptr<SplitEditorManager> m_splitManager;
     std::unique_ptr<CorkboardWidget> m_corkboardWidget;
+    std::unique_ptr<OutlinerWidget> m_outlinerWidget;
     bool m_isScriptwritingMode = false;
     bool m_isCorkboardActive = false;
+    bool m_isOutlinerActive = false;
 
     HFONT m_hFontTitle = nullptr;
     HFONT m_hFontBody = nullptr;

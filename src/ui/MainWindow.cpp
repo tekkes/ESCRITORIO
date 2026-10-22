@@ -18,6 +18,7 @@ MainWindow::MainWindow() {
     m_scriveningsEngine = std::make_unique<ScriveningsEngine>();
     m_splitManager = std::make_unique<SplitEditorManager>();
     m_corkboardWidget = std::make_unique<CorkboardWidget>();
+    m_outlinerWidget = std::make_unique<OutlinerWidget>();
 
     // Inicializar secciones compuestas de muestra en Scrivenings
     m_scriveningsEngine->AddSection(L"sec-1", L"Escena 1.1: La Niebla",
@@ -82,6 +83,8 @@ void MainWindow::ToggleScrivenings() {
     if (m_scriveningsEngine->IsActive()) {
         m_scriveningsEngine->Deactivate();
     } else {
+        m_isCorkboardActive = false;
+        m_isOutlinerActive = false;
         m_scriveningsEngine->Activate();
     }
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
@@ -89,6 +92,19 @@ void MainWindow::ToggleScrivenings() {
 
 void MainWindow::ToggleCorkboard() {
     m_isCorkboardActive = !m_isCorkboardActive;
+    if (m_isCorkboardActive) {
+        m_isOutlinerActive = false;
+        if (m_scriveningsEngine) m_scriveningsEngine->Deactivate();
+    }
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::ToggleOutliner() {
+    m_isOutlinerActive = !m_isOutlinerActive;
+    if (m_isOutlinerActive) {
+        m_isCorkboardActive = false;
+        if (m_scriveningsEngine) m_scriveningsEngine->Deactivate();
+    }
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
@@ -272,6 +288,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (ctrl && !shift && wParam == '2') { // Ctrl+2: Pizarra de Corcho (Corkboard)
             ToggleCorkboard();
+            return 0;
+        }
+        if (ctrl && !shift && wParam == '3') { // Ctrl+3: Esquema (Outliner)
+            ToggleOutliner();
             return 0;
         }
         if (ctrl && shift && wParam == 'L') { // Ctrl+Shift+L: Bloquear editor (Lock in Place)
@@ -502,7 +522,10 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     // 3. Panel Central: EDITOR RTF / SPLIT VIEW / SCRIVENINGS
     RECT rcEditor = { editorLeft, mainAreaTop, inspectorLeft, mainAreaBottom };
 
-    if (m_isCorkboardActive && m_corkboardWidget) {
+    if (m_isOutlinerActive && m_outlinerWidget) {
+        // Renderizar Esquematizador (Outliner)
+        m_outlinerWidget->Render(hdc, rcEditor, pal, d, m_hFontTitle, m_hFontSmall, m_hFontBody);
+    } else if (m_isCorkboardActive && m_corkboardWidget) {
         // Renderizar Pizarra de Corcho (Corkboard)
         m_corkboardWidget->Render(hdc, rcEditor, pal, d, m_hFontTitle, m_hFontSmall, m_hFontBody);
     } else if (m_splitManager && m_splitManager->GetMode() != NativeSplitMode::Single) {
@@ -671,6 +694,9 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
 
     std::wstringstream ssLeft;
     ssLeft << L"Palabras: 142 | Caracteres: 890";
+    if (m_isOutlinerActive && m_outlinerWidget) {
+        ssLeft << L" | [ESQUEMA: " << m_outlinerWidget->GetItemCount() << L" filas]";
+    }
     if (m_isCorkboardActive && m_corkboardWidget) {
         const wchar_t* submodeName = L"REJILLA";
         if (m_corkboardWidget->GetMode() == NativeCorkboardMode::Freeform) submodeName = L"LIBRE";

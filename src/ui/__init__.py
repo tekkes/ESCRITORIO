@@ -78,6 +78,16 @@ from .CorkboardWidget import (
     CorkboardFooterBar
 )
 from .outliner import OutlinerView
+from .OutlinerWidget import (
+    OutlinerWidget,
+    OutlinerColumn,
+    ColumnSelector,
+    ColumnType,
+    StandardColumnId,
+    calculate_progress_color,
+    OutlinerRow,
+    OutlinerExporter
+)
 from .inspector import InspectorView
 from .composition_mode import CompositionMode
 
@@ -142,6 +152,14 @@ __all__ = [
     "SwimlaneColumn",
     "CorkboardFooterBar",
     "OutlinerView",
+    "OutlinerWidget",
+    "OutlinerColumn",
+    "ColumnSelector",
+    "ColumnType",
+    "StandardColumnId",
+    "calculate_progress_color",
+    "OutlinerRow",
+    "OutlinerExporter",
     "InspectorView",
     "CompositionMode",
 ]
