@@ -89,6 +89,27 @@ from .OutlinerWidget import (
     OutlinerExporter
 )
 from .inspector import InspectorView
+from .InspectorWidget import (
+    InspectorWidget,
+    InspectorTabId,
+    TabNotesSynopsis,
+    TabBookmarks,
+    BookmarkScope,
+    BookmarkItem,
+    TabMetadata,
+    CustomFieldType,
+    CustomFieldDefinition,
+    ProjectKeywordsHUD,
+    KeywordDefinition,
+    MyersDiffEngine,
+    DiffOp,
+    DiffGranularity,
+    DiffChunk,
+    TabSnapshots,
+    SnapshotItem,
+    TabCommentsFootnotes,
+    CommentItem
+)
 from .composition_mode import CompositionMode
 
 __all__ = [
@@ -161,5 +182,24 @@ __all__ = [
     "OutlinerRow",
     "OutlinerExporter",
     "InspectorView",
+    "InspectorWidget",
+    "InspectorTabId",
+    "TabNotesSynopsis",
+    "TabBookmarks",
+    "BookmarkScope",
+    "BookmarkItem",
+    "TabMetadata",
+    "CustomFieldType",
+    "CustomFieldDefinition",
+    "ProjectKeywordsHUD",
+    "KeywordDefinition",
+    "MyersDiffEngine",
+    "DiffOp",
+    "DiffGranularity",
+    "DiffChunk",
+    "TabSnapshots",
+    "SnapshotItem",
+    "TabCommentsFootnotes",
+    "CommentItem",
     "CompositionMode",
 ]

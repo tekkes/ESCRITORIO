@@ -12,6 +12,7 @@
 #include "SplitEditorManager.hpp"
 #include "CorkboardWidget.hpp"
 #include "OutlinerWidget.hpp"
+#include "InspectorWidget.hpp"
 
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "comctl32.lib")
@@ -57,11 +58,14 @@ public:
     void CloseSplit();
     void ToggleLockActivePane();
     void ToggleScriptwritingMode();
+    void ToggleInspector();
 
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
     CorkboardWidget* GetCorkboardWidget() { return m_corkboardWidget.get(); }
     OutlinerWidget* GetOutlinerWidget() { return m_outlinerWidget.get(); }
+    InspectorWidget* GetInspectorWidget() { return m_inspectorWidget.get(); }
+    bool IsInspectorVisible() const { return m_isInspectorVisible; }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -81,9 +85,12 @@ private:
     std::unique_ptr<SplitEditorManager> m_splitManager;
     std::unique_ptr<CorkboardWidget> m_corkboardWidget;
     std::unique_ptr<OutlinerWidget> m_outlinerWidget;
+    std::unique_ptr<InspectorWidget> m_inspectorWidget;
     bool m_isScriptwritingMode = false;
     bool m_isCorkboardActive = false;
     bool m_isOutlinerActive = false;
+    bool m_isInspectorVisible = true;
+    RECT m_rcInspector = {};
 
     HFONT m_hFontTitle = nullptr;
     HFONT m_hFontBody = nullptr;

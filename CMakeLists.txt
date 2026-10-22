@@ -43,6 +43,8 @@ set(SOURCES
     src/ui/CorkboardWidget.cpp
     src/ui/OutlinerWidget.hpp
     src/ui/OutlinerWidget.cpp
+    src/ui/InspectorWidget.hpp
+    src/ui/InspectorWidget.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc

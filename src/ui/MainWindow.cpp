@@ -19,6 +19,7 @@ MainWindow::MainWindow() {
     m_splitManager = std::make_unique<SplitEditorManager>();
     m_corkboardWidget = std::make_unique<CorkboardWidget>();
     m_outlinerWidget = std::make_unique<OutlinerWidget>();
+    m_inspectorWidget = std::make_unique<InspectorWidget>();
 
     // Inicializar secciones compuestas de muestra en Scrivenings
     m_scriveningsEngine->AddSection(L"sec-1", L"Escena 1.1: La Niebla",
@@ -145,6 +146,11 @@ void MainWindow::ToggleLockActivePane() {
 
 void MainWindow::ToggleScriptwritingMode() {
     m_isScriptwritingMode = !m_isScriptwritingMode;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::ToggleInspector() {
+    m_isInspectorVisible = !m_isInspectorVisible;
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
@@ -306,6 +312,24 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             SplitHorizontal();
             return 0;
         }
+        if (ctrl && shift && (wParam == 'I' || wParam == 'i')) { // Ctrl+Shift+I: Conmutar Inspector
+            ToggleInspector();
+            return 0;
+        }
+        if (ctrl && !shift && wParam == '5') { // Ctrl+5: Instantánea Rápida
+            if (m_inspectorWidget) {
+                m_inspectorWidget->TakeSnapshot();
+                if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+            }
+            return 0;
+        }
+        if (ctrl && shift && wParam == '5') { // Ctrl+Shift+5: Instantánea con Título
+            if (m_inspectorWidget) {
+                m_inspectorWidget->TakeSnapshot(L"Instantánea Manual");
+                if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+            }
+            return 0;
+        }
         if (ctrl && wParam == '8') { // Ctrl+8: Modo Guion
             ToggleScriptwritingMode();
             return 0;
@@ -345,6 +369,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     SwitchTheme(static_cast<escritorio::themes::ThemeMode>(index));
                     return 0;
                 }
+            }
+        }
+
+        // Clic en el panel del Inspector
+        if (m_isInspectorVisible && m_inspectorWidget) {
+            if (m_inspectorWidget->HandleClick(x, y, m_rcInspector)) {
+                InvalidateRect(m_hwnd, nullptr, FALSE);
+                return 0;
             }
         }
         break;
@@ -391,7 +423,7 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     int mainAreaBottom = height - statusBarHeight;
 
     int binderWidth = 230;
-    int inspectorWidth = 250;
+    int inspectorWidth = m_isInspectorVisible ? 260 : 0;
     int editorLeft = binderWidth;
     int editorWidth = (std::max)(200, width - binderWidth - inspectorWidth);
     int inspectorLeft = editorLeft + editorWidth;
@@ -629,55 +661,19 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
         }
     }
 
-    // Separador Editor / Inspector
-    SelectObject(hdc, hPenBorder);
-    MoveToEx(hdc, inspectorLeft - 1, mainAreaTop, nullptr);
-    LineTo(hdc, inspectorLeft - 1, mainAreaBottom);
+    // Separador Editor / Inspector y Panel lateral derecho: INSPECTOR
+    if (m_isInspectorVisible) {
+        SelectObject(hdc, hPenBorder);
+        MoveToEx(hdc, inspectorLeft - 1, mainAreaTop, nullptr);
+        LineTo(hdc, inspectorLeft - 1, mainAreaBottom);
 
-    // 4. Panel lateral derecho: INSPECTOR
-    RECT rcInspector = { inspectorLeft, mainAreaTop, width, mainAreaBottom };
-    HBRUSH hBrInspector = CreateSolidBrush(pal.inspectorBg);
-    FillRect(hdc, &rcInspector, hBrInspector);
-    DeleteObject(hBrInspector);
-
-    SelectObject(hdc, m_hFontSmall);
-    SetTextColor(hdc, pal.binderSecondary);
-    RECT rcInspectorHeader = { inspectorLeft + 12, mainAreaTop + 6, width - 12, mainAreaTop + 22 };
-    DrawTextW(hdc, L"INSPECTOR (6 EN 1)", -1, &rcInspectorHeader, DT_LEFT | DT_SINGLELINE);
-
-    RECT rcInspectorTabs = { inspectorLeft + 12, mainAreaTop + 24, width - 12, mainAreaTop + 40 };
-    DrawTextW(hdc, L"[ Sinopsis ]  Notas  Metadatos", -1, &rcInspectorTabs, DT_LEFT | DT_SINGLELINE);
-
-    // Tarjeta de Sinopsis
-    RECT rcCard = { inspectorLeft + 12, mainAreaTop + 46, width - 12, mainAreaTop + 170 };
-    HBRUSH hBrCard = CreateSolidBrush(pal.corkboardCardBg);
-    FillRect(hdc, &rcCard, hBrCard);
-    DeleteObject(hBrCard);
-
-    HPEN hPenCard = CreatePen(PS_SOLID, 1, pal.corkboardCardBorder);
-    SelectObject(hdc, hPenCard);
-    Rectangle(hdc, rcCard.left, rcCard.top, rcCard.right, rcCard.bottom);
-    DeleteObject(hPenCard);
-
-    RECT rcCardText = { rcCard.left + 10, rcCard.top + 8, rcCard.right - 10, rcCard.bottom - 8 };
-    SelectObject(hdc, m_hFontSmall);
-    SetTextColor(hdc, pal.corkboardCardFg);
-    const wchar_t* synopsisText =
-        L"Sinopsis de Escena:\n"
-        L"Isabel llega a la ciudad vieja durante la medianoche lluviosa. Debe alcanzar el archivo "
-        L"sin ser detectada por los vigilantes.";
-    DrawTextW(hdc, synopsisText, -1, &rcCardText, DT_LEFT | DT_WORDBREAK);
-
-    // Metadatos con micro-badges
-    RECT rcMeta = { inspectorLeft + 12, mainAreaTop + 180, width - 12, mainAreaTop + 300 };
-    SetTextColor(hdc, pal.windowFg);
-    const wchar_t* metaText =
-        L"Metadatos:\n\n"
-        L"* Sección: Escena Capítulo\n"
-        L"* Palabras Objetivo: 2.500\n"
-        L"* Compilar: Activado\n"
-        L"* Densidad UI: Ultra-Compacta (28px)";
-    DrawTextW(hdc, metaText, -1, &rcMeta, DT_LEFT | DT_WORDBREAK);
+        m_rcInspector = { inspectorLeft, mainAreaTop, width, mainAreaBottom };
+        if (m_inspectorWidget) {
+            m_inspectorWidget->Render(hdc, m_rcInspector, pal, d, m_hFontTitle, m_hFontSmall, m_hFontMicro, m_hFontEditor);
+        }
+    } else {
+        m_rcInspector = { 0, 0, 0, 0 };
+    }
 
     // 5. Barra de Estado (Status Bar)
     RECT rcStatusBar = { 0, mainAreaBottom, width, height };
@@ -714,6 +710,9 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     }
     if (m_isScriptwritingMode) {
         ssLeft << L" | [GUION: DIÁLOGO]";
+    }
+    if (m_isInspectorVisible && m_inspectorWidget) {
+        ssLeft << L" | [INSPECTOR: P" << (static_cast<int>(m_inspectorWidget->GetActiveTab()) + 1) << L"]";
     }
     ssLeft << L" | Formato: .escr / .scrivx compatible";
     std::wstring strLeft = ssLeft.str();
