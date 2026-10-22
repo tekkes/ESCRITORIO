@@ -56,8 +56,10 @@ class MainWindowQt(QMainWindow):
 
         self.project: Optional[EscritorioProject] = None
         self.active_item: Optional[BinderItem] = None
-        self.current_theme = "dark_obsidian"
         self.split_active = False
+
+        # Cargar tema visual conservado de la última ejecución
+        self.current_theme = self._load_persisted_theme()
 
         # Configuración inicial de UI
         self._init_menu_bar()
@@ -77,6 +79,66 @@ class MainWindowQt(QMainWindow):
             self.load_project(project_path)
         else:
             self._create_initial_default_project()
+
+    # =========================================================================
+    # GESTIÓN DE CONFIGURACIÓN Y PERSISTENCIA DE MODO VISUAL PORTABLE
+    # =========================================================================
+
+    def _get_portable_config_dir(self) -> Path:
+        """Obtiene la carpeta portable ./config de forma 100% relativa."""
+        if getattr(sys, "frozen", False):
+            base_dir = Path(sys.executable).resolve().parent
+        else:
+            base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        cfg_dir = base_dir / "config"
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+        return cfg_dir
+
+    def _get_settings_file(self) -> Path:
+        """Ruta al archivo ./config/escritorio_settings.json."""
+        return self._get_portable_config_dir() / "escritorio_settings.json"
+
+    def _load_persisted_theme(self) -> str:
+        """Recupera el modo visual elegido la última vez que se ejecutó la aplicación."""
+        try:
+            settings_path = self._get_settings_file()
+            if settings_path.exists():
+                data = json.loads(settings_path.read_text(encoding="utf-8"))
+                saved_theme = data.get("theme")
+                if saved_theme and saved_theme in THEME_PALETTES:
+                    return saved_theme
+        except Exception:
+            pass
+        return "dark_obsidian"
+
+    def _save_persisted_theme(self, theme_key: str):
+        """Guarda de forma atómica el tema elegido para conservarlo entre ejecuciones."""
+        try:
+            settings_path = self._get_settings_file()
+            settings = {
+                "app_name": "Escritorio",
+                "version": "1.0.0",
+                "portable_mode": True,
+                "system_registry_access": False,
+                "appdata_access": False,
+                "theme": theme_key
+            }
+            if settings_path.exists():
+                try:
+                    loaded = json.loads(settings_path.read_text(encoding="utf-8"))
+                    if isinstance(loaded, dict):
+                        settings = loaded
+                        settings["theme"] = theme_key
+                except Exception:
+                    pass
+
+            tmp_path = settings_path.with_suffix(".tmp")
+            tmp_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
+            if settings_path.exists():
+                settings_path.unlink()
+            tmp_path.rename(settings_path)
+        except Exception as e:
+            pass
 
     # =========================================================================
     # INICIALIZACIÓN DE COMPONENTES DE INTERFAZ
@@ -228,6 +290,13 @@ class MainWindowQt(QMainWindow):
         toolbar.addWidget(QLabel(" Tema: "))
         self.combo_theme = QComboBox()
         self.combo_theme.addItems([k.replace("_", " ").title() for k in THEME_PALETTES.keys()])
+        
+        # Sincronizar índice inicial con el tema persistido cargado
+        cur_readable = self.current_theme.replace("_", " ").title()
+        idx = self.combo_theme.findText(cur_readable)
+        if idx >= 0:
+            self.combo_theme.setCurrentIndex(idx)
+            
         self.combo_theme.currentTextChanged.connect(self._on_theme_combo_changed)
         toolbar.addWidget(self.combo_theme)
 
@@ -695,6 +764,18 @@ class MainWindowQt(QMainWindow):
         self.setStyleSheet(qss)
         self.lbl_status_save.setText(f"Tema: {theme_key.replace('_', ' ').title()}")
 
+        # Sincronizar combo si existe
+        if hasattr(self, "combo_theme"):
+            readable = theme_key.replace("_", " ").title()
+            idx = self.combo_theme.findText(readable)
+            if idx >= 0 and self.combo_theme.currentIndex() != idx:
+                self.combo_theme.blockSignals(True)
+                self.combo_theme.setCurrentIndex(idx)
+                self.combo_theme.blockSignals(False)
+
+        # Persistir selección en archivo portable ./config/escritorio_settings.json
+        self._save_persisted_theme(theme_key)
+
     def _on_theme_combo_changed(self, text: str):
         key = text.lower().replace(" ", "_")
         self._apply_theme(key)
@@ -818,7 +899,9 @@ class MainWindowQt(QMainWindow):
         )
 
     def closeEvent(self, event):
-        """Al cerrar, guarda el proyecto y genera copia de seguridad si está configurado."""
+        """Al cerrar, guarda el proyecto, persiste el tema visual y genera copia de seguridad."""
+        if hasattr(self, "current_theme"):
+            self._save_persisted_theme(self.current_theme)
         if self.project:
             self.project.close()
         event.accept()

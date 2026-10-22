@@ -295,11 +295,26 @@ class DesktopLifecycleVerificationAgent:
         self.log("Paso 8", "Modo Composición (F11) con hoja central y sincronización validado")
 
     def _test_theme_switching(self, window: MainWindowQt):
+        # 1. Conmutación en caliente de todos los temas
         for theme_key in THEME_PALETTES.keys():
             window._apply_theme(theme_key)
             self.app.processEvents()
             assert window.current_theme == theme_key
-        self.log("Paso 9", f"Conmutación en caliente de {len(THEME_PALETTES)} temas visuales completada sin errores")
+
+        # 2. Comprobar persistencia entre sesiones consecutivas
+        test_chosen_theme = "sepia_parchment"
+        window._apply_theme(test_chosen_theme)
+        self.app.processEvents()
+
+        # Instanciar nueva ventana independiente y verificar que carga el modo visual elegido
+        win_reopened = MainWindowQt(project_path=str(self.project_path))
+        self.app.processEvents()
+        assert win_reopened.current_theme == test_chosen_theme, (
+            f"El tema persistido '{win_reopened.current_theme}' no coincide con '{test_chosen_theme}'"
+        )
+        win_reopened.close()
+
+        self.log("Paso 9", f"Conmutación en caliente ({len(THEME_PALETTES)} temas) y persistencia del modo visual entre sesiones verificadas al 100%")
 
     def _test_auxiliary_dialogs(self, window: MainWindowQt):
         # 1. Project Targets
