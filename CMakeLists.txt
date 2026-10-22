@@ -39,6 +39,8 @@ set(SOURCES
     src/ui/ScriveningsEngine.cpp
     src/ui/SplitEditorManager.hpp
     src/ui/SplitEditorManager.cpp
+    src/ui/CorkboardWidget.hpp
+    src/ui/CorkboardWidget.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc

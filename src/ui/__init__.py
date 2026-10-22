@@ -64,7 +64,19 @@ from .ResearchViewers import (
     ResearchViewerRouter
 )
 
-from .corkboard import CorkboardView
+from .corkboard import CorkboardView, CorkboardCard
+from .CorkboardWidget import (
+    CorkboardWidget,
+    CorkboardMode,
+    IndexCard,
+    CardAspectRatio,
+    LabelColorStyle,
+    CorkboardGrid,
+    CorkboardFreeform,
+    CorkboardSwimlanes,
+    SwimlaneColumn,
+    CorkboardFooterBar
+)
 from .outliner import OutlinerView
 from .inspector import InspectorView
 from .composition_mode import CompositionMode
@@ -118,6 +130,17 @@ __all__ = [
     "WebArchiveViewer",
     "ResearchViewerRouter",
     "CorkboardView",
+    "CorkboardCard",
+    "CorkboardWidget",
+    "CorkboardMode",
+    "IndexCard",
+    "CardAspectRatio",
+    "LabelColorStyle",
+    "CorkboardGrid",
+    "CorkboardFreeform",
+    "CorkboardSwimlanes",
+    "SwimlaneColumn",
+    "CorkboardFooterBar",
     "OutlinerView",
     "InspectorView",
     "CompositionMode",

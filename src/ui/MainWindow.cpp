@@ -17,6 +17,7 @@ MainWindow::MainWindow() {
     );
     m_scriveningsEngine = std::make_unique<ScriveningsEngine>();
     m_splitManager = std::make_unique<SplitEditorManager>();
+    m_corkboardWidget = std::make_unique<CorkboardWidget>();
 
     // Inicializar secciones compuestas de muestra en Scrivenings
     m_scriveningsEngine->AddSection(L"sec-1", L"Escena 1.1: La Niebla",
@@ -83,6 +84,11 @@ void MainWindow::ToggleScrivenings() {
     } else {
         m_scriveningsEngine->Activate();
     }
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::ToggleCorkboard() {
+    m_isCorkboardActive = !m_isCorkboardActive;
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
@@ -264,6 +270,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ToggleScrivenings();
             return 0;
         }
+        if (ctrl && !shift && wParam == '2') { // Ctrl+2: Pizarra de Corcho (Corkboard)
+            ToggleCorkboard();
+            return 0;
+        }
         if (ctrl && shift && wParam == 'L') { // Ctrl+Shift+L: Bloquear editor (Lock in Place)
             ToggleLockActivePane();
             return 0;
@@ -272,7 +282,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             SplitVertical();
             return 0;
         }
-        if (ctrl && (wParam == '2' || wParam == VK_OEM_5 || wParam == '"')) { // Ctrl+": División horizontal
+        if (ctrl && (wParam == VK_OEM_5 || wParam == '"')) { // Ctrl+": División horizontal
             SplitHorizontal();
             return 0;
         }
@@ -492,7 +502,10 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     // 3. Panel Central: EDITOR RTF / SPLIT VIEW / SCRIVENINGS
     RECT rcEditor = { editorLeft, mainAreaTop, inspectorLeft, mainAreaBottom };
 
-    if (m_splitManager && m_splitManager->GetMode() != NativeSplitMode::Single) {
+    if (m_isCorkboardActive && m_corkboardWidget) {
+        // Renderizar Pizarra de Corcho (Corkboard)
+        m_corkboardWidget->Render(hdc, rcEditor, pal, d, m_hFontTitle, m_hFontSmall, m_hFontBody);
+    } else if (m_splitManager && m_splitManager->GetMode() != NativeSplitMode::Single) {
         // Renderizar vista dividida (Vertical, Horizontal o Cuadrícula 4)
         m_splitManager->Render(hdc, rcEditor, pal, d, m_hFontTitle, m_hFontSmall, m_hFontBody);
     } else if (m_scriveningsEngine && m_scriveningsEngine->IsActive()) {
@@ -658,6 +671,12 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
 
     std::wstringstream ssLeft;
     ssLeft << L"Palabras: 142 | Caracteres: 890";
+    if (m_isCorkboardActive && m_corkboardWidget) {
+        const wchar_t* submodeName = L"REJILLA";
+        if (m_corkboardWidget->GetMode() == NativeCorkboardMode::Freeform) submodeName = L"LIBRE";
+        else if (m_corkboardWidget->GetMode() == NativeCorkboardMode::Swimlanes) submodeName = L"SWIMLANES";
+        ssLeft << L" | [CORCHO: " << submodeName << L"]";
+    }
     if (m_scriveningsEngine && m_scriveningsEngine->IsActive()) {
         ssLeft << L" | [SCRIVENINGS: " << m_scriveningsEngine->GetSectionCount() << L" secciones]";
     }

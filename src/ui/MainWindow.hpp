@@ -10,6 +10,7 @@
 #include "../themes/ThemeEngine.hpp"
 #include "ScriveningsEngine.hpp"
 #include "SplitEditorManager.hpp"
+#include "CorkboardWidget.hpp"
 
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "comctl32.lib")
@@ -28,6 +29,7 @@ namespace escritorio::ui {
  * - Estructura visual tripartita de Scrivener 3 (Binder, Editor, Inspector).
  * - Motor visual con los 7 modos predefinidos y conmutación de densidad UI (Ultra-Compacto 28px/24px/10px).
  * - Modo Scrivenings continuo (Ctrl+1) con títulos in-situ y separadores configurables.
+ * - Modo Pizarra de Corcho (Ctrl+2) en modos Rejilla, Forma Libre y Swimlanes.
  * - Pantalla dividida hasta 4 paneles (Ctrl+', Ctrl+", Grid) y Lock in Place (Ctrl+Shift+L).
  * - Modo Escritura de Guiones (Ctrl+8).
  */
@@ -44,8 +46,9 @@ public:
     void CycleTheme();
     void SetUIDensity(escritorio::themes::UIDensityMode density);
 
-    // Nuevas funciones de Prompt 07
+    // Nuevas funciones de Prompt 07 y Prompt 08
     void ToggleScrivenings();
+    void ToggleCorkboard();
     void SplitVertical();
     void SplitHorizontal();
     void SplitGrid();
@@ -55,6 +58,7 @@ public:
 
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
+    CorkboardWidget* GetCorkboardWidget() { return m_corkboardWidget.get(); }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -72,7 +76,9 @@ private:
     std::unique_ptr<escritorio::themes::ThemeEngine> m_themeEngine;
     std::unique_ptr<ScriveningsEngine> m_scriveningsEngine;
     std::unique_ptr<SplitEditorManager> m_splitManager;
+    std::unique_ptr<CorkboardWidget> m_corkboardWidget;
     bool m_isScriptwritingMode = false;
+    bool m_isCorkboardActive = false;
 
     HFONT m_hFontTitle = nullptr;
     HFONT m_hFontBody = nullptr;

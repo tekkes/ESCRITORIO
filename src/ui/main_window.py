@@ -65,6 +65,18 @@ class MainWindow:
         self.binder_visible: bool = True
         self.last_theme_switch_latency_ms: float = 0.0
 
+    @property
+    def view_mode(self) -> CentralViewMode:
+        return self.current_view_mode
+
+    @view_mode.setter
+    def view_mode(self, mode: CentralViewMode):
+        self.current_view_mode = mode
+
+    @property
+    def corkboard_widget(self) -> CorkboardView:
+        return self.corkboard
+
         # Conectar selección del binder con las vistas
         self.binder.on_selection_changed = self._on_binder_selection_changed
 
@@ -136,6 +148,23 @@ class MainWindow:
         self.scrivenings_engine.set_divider_style(style)
         if self.current_view_mode == CentralViewMode.SCRIVENINGS:
             self.split_container.get_active_editor().plain_text = self.scrivenings_engine.composite_text
+
+    # =========================================================================
+    # Modo Pizarra de Corcho (Ctrl+2)
+    # =========================================================================
+
+    def toggle_corkboard_mode(self) -> bool:
+        """Alterna el modo Pizarra de Corcho (Ctrl+2)."""
+        if self.current_view_mode == CentralViewMode.CORKBOARD:
+            self.current_view_mode = CentralViewMode.EDITOR
+            return False
+        else:
+            self.current_view_mode = CentralViewMode.CORKBOARD
+            if self.binder.selected_uuid and self.project:
+                it = self.project.get_item(self.binder.selected_uuid)
+                if it:
+                    self.corkboard.load_container(it)
+            return True
 
     # =========================================================================
     # Pantalla Dividida y Bloqueo (Ctrl+', Ctrl+\", Ctrl+Shift+L)

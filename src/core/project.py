@@ -87,6 +87,11 @@ class BinderItem:
     def children(self) -> List['BinderItem']:
         return [self.project.get_item(c.uuid) for c in self.data.children if self.project.get_item(c.uuid)]
 
+    @children.setter
+    def children(self, new_children: List['BinderItem']):
+        self.data.children = [c.data if isinstance(c, BinderItem) else c for c in new_children]
+        self.mark_dirty()
+
     def mark_dirty(self):
         """Marca el documento como modificado y actualiza el reloj de inactividad."""
         self.is_dirty = True
