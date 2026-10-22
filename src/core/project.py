@@ -422,6 +422,8 @@ class EscritorioProject:
         proj_instance.load()
         return proj_instance
 
+    create_new_project = create_new
+
     def load(self, force_unlock: bool = False):
         """Carga el proyecto completo desde el archivo maestro y mapea el Binder."""
         if not self.project_file.exists():

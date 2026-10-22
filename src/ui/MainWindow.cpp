@@ -169,6 +169,11 @@ void MainWindow::ToggleCompileDialog() {
     if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
+void MainWindow::ToggleNewProjectChooser() {
+    m_isNewProjectChooserOpen = !m_isNewProjectChooserOpen;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
 bool MainWindow::Create(HINSTANCE hInstance, int nCmdShow, double startupTimeMs) {
     m_hInstance = hInstance;
     m_startupTimeMs = startupTimeMs;
@@ -365,8 +370,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ToggleCompileDialog();
             return 0;
         }
+        if (ctrl && shift && (wParam == 'N' || wParam == 'n')) { // Ctrl+Shift+N: New Project Chooser (Galería de Plantillas)
+            ToggleNewProjectChooser();
+            return 0;
+        }
         if (wParam == VK_ESCAPE && m_isCompileDialogOpen) { // Esc: Salir de Compilación
             ToggleCompileDialog();
+            return 0;
+        }
+        if (wParam == VK_ESCAPE && m_isNewProjectChooserOpen) { // Esc: Salir de Galería de Plantillas
+            ToggleNewProjectChooser();
             return 0;
         }
 
@@ -848,6 +861,11 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     if (m_isCompileDialogOpen) {
         RenderCompileDialog(hdc, width, height, pal);
     }
+
+    // Galería de Plantillas de Proyecto (New Project Chooser)
+    if (m_isNewProjectChooserOpen) {
+        RenderNewProjectChooser(hdc, width, height, pal);
+    }
 }
 
 void MainWindow::RenderProjectTargetsDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal) {
@@ -1129,6 +1147,165 @@ void MainWindow::RenderCompileDialog(HDC hdc, int width, int height, const escri
     DeleteObject(hBrCompile);
     SetTextColor(hdc, RGB(255, 255, 255));
     DrawTextW(hdc, L"Compilar", -1, &rcBtnCompile, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    SelectObject(hdc, hOldPen);
+}
+
+void MainWindow::RenderNewProjectChooser(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal) {
+    int dlgW = 760;
+    int dlgH = 480;
+    int dlgLeft = (width - dlgW) / 2;
+    int dlgTop = (height - dlgH) / 2;
+    RECT rcDlg = { dlgLeft, dlgTop, dlgLeft + dlgW, dlgTop + dlgH };
+
+    // Fondo del cuadro modal
+    HBRUSH hBrDlg = CreateSolidBrush(pal.inspectorBg);
+    FillRect(hdc, &rcDlg, hBrDlg);
+    DeleteObject(hBrDlg);
+
+    HPEN hPenBorder = CreatePen(PS_SOLID, 2, pal.accentPrimary);
+    HPEN hOldPen = static_cast<HPEN>(SelectObject(hdc, hPenBorder));
+    Rectangle(hdc, rcDlg.left, rcDlg.top, rcDlg.right, rcDlg.bottom);
+    DeleteObject(hPenBorder);
+
+    // Cabecera
+    RECT rcHeader = { dlgLeft + 16, dlgTop + 12, dlgLeft + dlgW - 16, dlgTop + 36 };
+    SelectObject(hdc, m_hFontTitle);
+    SetTextColor(hdc, pal.accentPrimary);
+    DrawTextW(hdc, L"Nuevo Proyecto - Galería de Plantillas (Project Chooser)", -1, &rcHeader, DT_LEFT | DT_SINGLELINE);
+
+    HPEN hPenSep = CreatePen(PS_SOLID, 1, pal.toolbarBorder);
+    SelectObject(hdc, hPenSep);
+    MoveToEx(hdc, dlgLeft, dlgTop + 44, nullptr);
+    LineTo(hdc, dlgLeft + dlgW, dlgTop + 44);
+
+    // Layout de 2 columnas: Categorías a la izquierda (180px), Plantillas a la derecha
+    int catWidth = 180;
+    int contentTop = dlgTop + 54;
+    int contentBottom = dlgTop + dlgH - 50;
+
+    // Columna Izquierda: Categorías
+    RECT rcCatCol = { dlgLeft + 12, contentTop, dlgLeft + catWidth, contentBottom };
+    HBRUSH hBrCol = CreateSolidBrush(pal.binderBg);
+    FillRect(hdc, &rcCatCol, hBrCol);
+    Rectangle(hdc, rcCatCol.left, rcCatCol.top, rcCatCol.right, rcCatCol.bottom);
+
+    const wchar_t* categories[] = {
+        L"⬜ En Blanco",
+        L"📖 Ficción",
+        L"🎓 No Ficción",
+        L"🎬 Guion"
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        RECT rcCat = { rcCatCol.left + 6, rcCatCol.top + 8 + (i * 32), rcCatCol.right - 6, rcCatCol.top + 36 + (i * 32) };
+        bool isSel = (i == m_templateSelectedCategory);
+        if (isSel) {
+            HBRUSH hBrSel = CreateSolidBrush(pal.binderSelBg);
+            FillRect(hdc, &rcCat, hBrSel);
+            DeleteObject(hBrSel);
+            SetTextColor(hdc, pal.binderSelFg);
+        } else {
+            SetTextColor(hdc, pal.binderFg);
+        }
+        SelectObject(hdc, m_hFontSmall);
+        DrawTextW(hdc, categories[i], -1, &rcCat, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    }
+
+    // Columna Derecha: Tarjetas de plantillas
+    int templatesLeft = dlgLeft + catWidth + 12;
+    int templatesRight = dlgLeft + dlgW - 12;
+    RECT rcTmplCol = { templatesLeft, contentTop, templatesRight, contentBottom };
+    FillRect(hdc, &rcTmplCol, hBrCol);
+    Rectangle(hdc, rcTmplCol.left, rcTmplCol.top, rcTmplCol.right, rcTmplCol.bottom);
+    DeleteObject(hBrCol);
+
+    // Renderizar tarjetas según la categoría activa
+    struct TemplateCard {
+        const wchar_t* title;
+        const wchar_t* target;
+        const wchar_t* desc;
+    };
+
+    std::vector<TemplateCard> cards;
+    if (m_templateSelectedCategory == 0) { // En Blanco
+        cards.push_back({ L"Proyecto en Blanco", L"Sin meta", L"Estructura vacía de Binder con Manuscrito, Investigación y Papelera." });
+    } else if (m_templateSelectedCategory == 1) { // Ficción
+        cards.push_back({ L"Novela Estándar", L"80.000 palabras", L"Capítulos, escenas, fichas de personajes y hojas de escenario integradas." });
+        cards.push_back({ L"Novela con Partes", L"100.000 palabras", L"Estructura para sagas u obras divididas en Partes / Libros con capítulos anidados." });
+        cards.push_back({ L"Relato Corto", L"5.000 palabras", L"Plantilla ligera para cuentos y antologías con 3 fases de escena." });
+    } else if (m_templateSelectedCategory == 2) { // No Ficción
+        cards.push_back({ L"Ensayo General", L"30.000 palabras", L"Libros de divulgación o monografías con bloques de análisis y bibliografía." });
+        cards.push_back({ L"Artículo APA (7ª Ed.)", L"7.000 palabras", L"Artículo académico formal con Abstract, Método, Resultados y Discusión." });
+        cards.push_back({ L"Artículo MLA (9ª Ed.)", L"5.000 palabras", L"Manuscrito de humanidades con encabezado MLA y sección Obras Citadas." });
+        cards.push_back({ L"Tesis Doctoral", L"90.000 palabras", L"Estructura completa para tesis con justificación, estado del arte y anexos." });
+    } else { // Guion
+        cards.push_back({ L"Guion de Cine (Largometraje)", L"20.000 palabras (~110 págs)", L"Estructura en 3 Actos con escaleta de secuencias y fichas dramáticas." });
+        cards.push_back({ L"Obra de Teatro", L"15.000 palabras", L"Formato teatral clásico con Dramatis Personae y división en Actos/Escenas." });
+        cards.push_back({ L"Cómic / Novela Gráfica", L"10.000 palabras", L"Guion técnico dividido por Páginas y Viñetas para dibujantes." });
+        cards.push_back({ L"Podcast / Ficción Sonora", L"6.000 palabras", L"Guion de audio con marcas técnicas de SFX, música y locución." });
+    }
+
+    int cardY = rcTmplCol.top + 8;
+    for (size_t i = 0; i < cards.size() && i < 4; ++i) {
+        RECT rcCard = { rcTmplCol.left + 8, cardY, rcTmplCol.right - 8, cardY + 70 };
+        bool isSel = (static_cast<int>(i) == m_templateSelectedCard);
+
+        HBRUSH hBrCard = CreateSolidBrush(isSel ? pal.editorHeaderBg : pal.windowBg);
+        FillRect(hdc, &rcCard, hBrCard);
+        DeleteObject(hBrCard);
+        FrameRect(hdc, &rcCard, isSel ? (HBRUSH)GetStockObject(BLACK_BRUSH) : (HBRUSH)GetStockObject(GRAY_BRUSH));
+
+        // Título de la plantilla y objetivo
+        RECT rcCardTitle = { rcCard.left + 8, rcCard.top + 6, rcCard.right - 120, rcCard.top + 24 };
+        SelectObject(hdc, m_hFontSmall);
+        SetTextColor(hdc, isSel ? pal.accentPrimary : pal.windowFg);
+        DrawTextW(hdc, cards[i].title, -1, &rcCardTitle, DT_LEFT | DT_SINGLELINE);
+
+        RECT rcCardBadge = { rcCard.right - 180, rcCard.top + 6, rcCard.right - 8, rcCard.top + 24 };
+        SelectObject(hdc, m_hFontMicro);
+        SetTextColor(hdc, pal.statusBarFg);
+        DrawTextW(hdc, cards[i].target, -1, &rcCardBadge, DT_RIGHT | DT_SINGLELINE);
+
+        // Descripción
+        RECT rcCardDesc = { rcCard.left + 8, rcCard.top + 26, rcCard.right - 8, rcCard.bottom - 4 };
+        SelectObject(hdc, m_hFontSmall);
+        SetTextColor(hdc, pal.binderSecondary);
+        DrawTextW(hdc, cards[i].desc, -1, &rcCardDesc, DT_LEFT | DT_WORDBREAK);
+
+        cardY += 76;
+    }
+
+    // Barra de acciones inferior
+    MoveToEx(hdc, dlgLeft, contentBottom + 8, nullptr);
+    LineTo(hdc, dlgLeft + dlgW, contentBottom + 8);
+    DeleteObject(hPenSep);
+
+    // Botón Guardar Proyecto como Plantilla
+    RECT rcBtnSaveTmpl = { dlgLeft + 16, contentBottom + 14, dlgLeft + 270, dlgTop + dlgH - 12 };
+    HBRUSH hBrBtnTmpl = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBtnSaveTmpl, hBrBtnTmpl);
+    DeleteObject(hBrBtnTmpl);
+    FrameRect(hdc, &rcBtnSaveTmpl, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    SelectObject(hdc, m_hFontSmall);
+    SetTextColor(hdc, pal.windowFg);
+    DrawTextW(hdc, L"💾 Guardar como Plantilla...", -1, &rcBtnSaveTmpl, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    // Botón Cancelar
+    RECT rcBtnCancel = { dlgLeft + dlgW - 220, contentBottom + 14, dlgLeft + dlgW - 120, dlgTop + dlgH - 12 };
+    HBRUSH hBrCancel = CreateSolidBrush(pal.editorHeaderBg);
+    FillRect(hdc, &rcBtnCancel, hBrCancel);
+    DeleteObject(hBrCancel);
+    FrameRect(hdc, &rcBtnCancel, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    DrawTextW(hdc, L"Cancelar", -1, &rcBtnCancel, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    // Botón Elegir Plantilla
+    RECT rcBtnChoose = { dlgLeft + dlgW - 110, contentBottom + 14, dlgLeft + dlgW - 16, dlgTop + dlgH - 12 };
+    HBRUSH hBrChoose = CreateSolidBrush(pal.accentPrimary);
+    FillRect(hdc, &rcBtnChoose, hBrChoose);
+    DeleteObject(hBrChoose);
+    SetTextColor(hdc, RGB(255, 255, 255));
+    DrawTextW(hdc, L"Elegir", -1, &rcBtnChoose, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     SelectObject(hdc, hOldPen);
 }

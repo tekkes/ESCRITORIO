@@ -62,6 +62,7 @@ public:
     void ToggleCompositionMode();
     void ToggleProjectTargets();
     void ToggleCompileDialog();
+    void ToggleNewProjectChooser();
 
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
@@ -72,6 +73,7 @@ public:
     bool IsCompositionMode() const { return m_isCompositionMode; }
     bool IsProjectTargetsOpen() const { return m_isProjectTargetsOpen; }
     bool IsCompileDialogOpen() const { return m_isCompileDialogOpen; }
+    bool IsNewProjectChooserOpen() const { return m_isNewProjectChooserOpen; }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -82,6 +84,7 @@ private:
     void RenderUI(HDC hdc, const RECT& clientRect);
     void RenderProjectTargetsDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
     void RenderCompileDialog(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
+    void RenderNewProjectChooser(HDC hdc, int width, int height, const escritorio::themes::ThemePalette& pal);
 
     HINSTANCE m_hInstance = nullptr;
     HWND m_hwnd = nullptr;
@@ -101,6 +104,9 @@ private:
     bool m_isCompositionMode = false;
     bool m_isProjectTargetsOpen = false;
     bool m_isCompileDialogOpen = false;
+    bool m_isNewProjectChooserOpen = false;
+    int m_templateSelectedCategory = 1; // 0: En Blanco, 1: Ficción, 2: No Ficción, 3: Guion
+    int m_templateSelectedCard = 0;
     int m_compileSelectedFormatIndex = 0;
     int m_compileSelectedTab = 0;
     int m_compositionPaperWidthPercent = 65;
