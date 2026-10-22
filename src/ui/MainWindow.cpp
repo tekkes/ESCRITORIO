@@ -15,6 +15,33 @@ MainWindow::MainWindow() {
         escritorio::themes::ThemeMode::MinimalistDefault,
         escritorio::themes::UIDensityMode::UltraCompact
     );
+    m_scriveningsEngine = std::make_unique<ScriveningsEngine>();
+    m_splitManager = std::make_unique<SplitEditorManager>();
+
+    // Inicializar secciones compuestas de muestra en Scrivenings
+    m_scriveningsEngine->AddSection(L"sec-1", L"Escena 1.1: La Niebla",
+        L"La noche caía sobre las torres antiguas con una quietud espectral. Todo comenzaba aquí, en "
+        L"este preciso instante en que el reloj de la catedral marcaba las doce campanadas.");
+    m_scriveningsEngine->AddSection(L"sec-2", L"Escena 1.2: El Umbral",
+        L"Bajo el dintel de piedra tallada, la cerradura oxidada cedió con un chasquido metálico. "
+        L"Isabel empujó despacio el portón de roble mientras la lluvia arreciaba a sus espaldas.");
+    m_scriveningsEngine->Deactivate(); // Comienza en modo normal
+
+    // Cargar contenido en el panel inicial
+    auto* pane0 = m_splitManager->GetPane(L"pane_0");
+    if (pane0) {
+        pane0->docUuid = L"doc-scene-1-1";
+        pane0->docTitle = L"Escena 1.1: La Niebla";
+        pane0->editor->SetPlainText(
+            L"La noche caía sobre las torres antiguas con una quietud espectral. Todo comenzaba aquí, en "
+            L"este preciso instante en que el reloj de la catedral marcaba las doce campanadas. Las calles "
+            L"adoquinadas brillaban bajo una fina capa de lluvia recién caída, reflejando la tímida luz ámbar de "
+            L"las farolas de gas.\r\n\r\n"
+            L"Isabel apretó el abrigo contra su pecho y aceleró el paso. Sabía que cada segundo contaba antes "
+            L"de que las sombras volvieran a moverse entre los soportales de la plaza mayor. En el bolsillo interior, "
+            L"el cuaderno encuadernado en piel contenía las coordenadas que nadie más debía descubrir."
+        );
+    }
 }
 
 MainWindow::~MainWindow() {
@@ -47,6 +74,56 @@ void MainWindow::SetUIDensity(escritorio::themes::UIDensityMode density) {
     if (m_hwnd) {
         InvalidateRect(m_hwnd, nullptr, FALSE);
     }
+}
+
+void MainWindow::ToggleScrivenings() {
+    if (!m_scriveningsEngine) return;
+    if (m_scriveningsEngine->IsActive()) {
+        m_scriveningsEngine->Deactivate();
+    } else {
+        m_scriveningsEngine->Activate();
+    }
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::SplitVertical() {
+    if (m_splitManager) {
+        m_splitManager->SplitVertical();
+        if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+    }
+}
+
+void MainWindow::SplitHorizontal() {
+    if (m_splitManager) {
+        m_splitManager->SplitHorizontal();
+        if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+    }
+}
+
+void MainWindow::SplitGrid() {
+    if (m_splitManager) {
+        m_splitManager->SplitGrid();
+        if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+    }
+}
+
+void MainWindow::CloseSplit() {
+    if (m_splitManager) {
+        m_splitManager->CloseSplit();
+        if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+    }
+}
+
+void MainWindow::ToggleLockActivePane() {
+    if (m_splitManager) {
+        m_splitManager->ToggleLockActivePane();
+        if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+    }
+}
+
+void MainWindow::ToggleScriptwritingMode() {
+    m_isScriptwritingMode = !m_isScriptwritingMode;
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
 bool MainWindow::Create(HINSTANCE hInstance, int nCmdShow, double startupTimeMs) {
@@ -179,7 +256,31 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         InvalidateRect(m_hwnd, nullptr, FALSE);
         return 0;
 
-    case WM_KEYDOWN:
+    case WM_KEYDOWN: {
+        bool ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+        bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+        if (ctrl && !shift && wParam == '1') { // Ctrl+1: Modo Scrivenings
+            ToggleScrivenings();
+            return 0;
+        }
+        if (ctrl && shift && wParam == 'L') { // Ctrl+Shift+L: Bloquear editor (Lock in Place)
+            ToggleLockActivePane();
+            return 0;
+        }
+        if (ctrl && (wParam == VK_OEM_7 || wParam == 0xDE || wParam == '\'')) { // Ctrl+': División vertical
+            SplitVertical();
+            return 0;
+        }
+        if (ctrl && (wParam == '2' || wParam == VK_OEM_5 || wParam == '"')) { // Ctrl+": División horizontal
+            SplitHorizontal();
+            return 0;
+        }
+        if (ctrl && wParam == '8') { // Ctrl+8: Modo Guion
+            ToggleScriptwritingMode();
+            return 0;
+        }
+
         if (wParam == VK_F8) { // F8 para ciclar temas instantáneamente
             CycleTheme();
             return 0;
@@ -193,6 +294,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
         }
         break;
+    }
 
     case WM_LBUTTONDOWN: {
         int x = LOWORD(lParam);
@@ -387,49 +489,109 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     MoveToEx(hdc, binderWidth - 1, mainAreaTop, nullptr);
     LineTo(hdc, binderWidth - 1, mainAreaBottom);
 
-    // 3. Panel Central: EDITOR RTF
+    // 3. Panel Central: EDITOR RTF / SPLIT VIEW / SCRIVENINGS
     RECT rcEditor = { editorLeft, mainAreaTop, inspectorLeft, mainAreaBottom };
-    HBRUSH hBrEditor = CreateSolidBrush(pal.editorBg);
-    FillRect(hdc, &rcEditor, hBrEditor);
-    DeleteObject(hBrEditor);
 
-    // Cabecera compacta del Editor (24px)
-    RECT rcEditorHeader = { editorLeft, mainAreaTop, inspectorLeft, mainAreaTop + editorHeaderHeight };
-    HBRUSH hBrEdHeader = CreateSolidBrush(pal.editorHeaderBg);
-    FillRect(hdc, &rcEditorHeader, hBrEdHeader);
-    DeleteObject(hBrEdHeader);
+    if (m_splitManager && m_splitManager->GetMode() != NativeSplitMode::Single) {
+        // Renderizar vista dividida (Vertical, Horizontal o Cuadrícula 4)
+        m_splitManager->Render(hdc, rcEditor, pal, d, m_hFontTitle, m_hFontSmall, m_hFontBody);
+    } else if (m_scriveningsEngine && m_scriveningsEngine->IsActive()) {
+        // Renderizar Modo Scrivenings continuo
+        HBRUSH hBrEditor = CreateSolidBrush(pal.editorBg);
+        FillRect(hdc, &rcEditor, hBrEditor);
+        DeleteObject(hBrEditor);
 
-    SelectObject(hdc, m_hFontSmall);
-    SetTextColor(hdc, pal.editorHeaderFg);
-    RECT rcDocPath = { editorLeft + 16, mainAreaTop, inspectorLeft - 120, mainAreaTop + editorHeaderHeight };
-    DrawTextW(hdc, L"Manuscrito > Cap. 1: El Despertar > Escena 1.1: La Niebla", -1, &rcDocPath, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        RECT rcEditorHeader = { editorLeft, mainAreaTop, inspectorLeft, mainAreaTop + editorHeaderHeight };
+        HBRUSH hBrEdHeader = CreateSolidBrush(pal.editorHeaderBg);
+        FillRect(hdc, &rcEditorHeader, hBrEdHeader);
+        DeleteObject(hBrEdHeader);
 
-    // Micro-badge de estado en cabecera
-    SelectObject(hdc, m_hFontMicro);
-    m_themeEngine->DrawMicroBadge(hdc, inspectorLeft - 110, mainAreaTop + 6, L"BORRADOR FINAL", pal.badgeStatusBg, pal.badgeStatusFg, d.badgeHeight);
+        SelectObject(hdc, m_hFontSmall);
+        SetTextColor(hdc, pal.editorHeaderFg);
+        RECT rcDocPath = { editorLeft + 16, mainAreaTop, inspectorLeft - 140, mainAreaTop + editorHeaderHeight };
+        DrawTextW(hdc, L"MODO SCRIVENINGS (VISTA CONTINUA COMPUESTA)", -1, &rcDocPath, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
-    // Línea divisoria de cabecera
-    MoveToEx(hdc, editorLeft, mainAreaTop + editorHeaderHeight - 1, nullptr);
-    LineTo(hdc, inspectorLeft, mainAreaTop + editorHeaderHeight - 1);
+        SelectObject(hdc, m_hFontMicro);
+        m_themeEngine->DrawMicroBadge(hdc, inspectorLeft - 130, mainAreaTop + 6, L"MANUSCRITO CONTINUO", pal.badgeStatusBg, pal.badgeStatusFg, d.badgeHeight);
 
-    // Título y contenido del documento
-    RECT rcDocTitle = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 16, inspectorLeft - 24, mainAreaTop + editorHeaderHeight + 46 };
-    SelectObject(hdc, m_hFontTitle);
-    SetTextColor(hdc, pal.editorFg);
-    DrawTextW(hdc, L"Escena 1.1: La Niebla", -1, &rcDocTitle, DT_LEFT | DT_SINGLELINE);
+        MoveToEx(hdc, editorLeft, mainAreaTop + editorHeaderHeight - 1, nullptr);
+        LineTo(hdc, inspectorLeft, mainAreaTop + editorHeaderHeight - 1);
 
-    RECT rcDocBody = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 52, inspectorLeft - 24, mainAreaBottom - 16 };
-    SelectObject(hdc, m_hFontEditor);
-    SetTextColor(hdc, pal.editorFg);
-    const wchar_t* sampleParagraph =
-        L"La noche caía sobre las torres antiguas con una quietud espectral. Todo comenzaba aquí, en "
-        L"este preciso instante en que el reloj de la catedral marcaba las doce campanadas. Las calles "
-        L"adoquinadas brillaban bajo una fina capa de lluvia recién caída, reflejando la tímida luz ámbar de "
-        L"las farolas de gas.\n\n"
-        L"Isabel apretó el abrigo contra su pecho y aceleró el paso. Sabía que cada segundo contaba antes "
-        L"de que las sombras volvieran a moverse entre los soportales de la plaza mayor. En el bolsillo interior, "
-        L"el cuaderno encuadernado en piel contenía las coordenadas que nadie más debía descubrir.";
-    DrawTextW(hdc, sampleParagraph, -1, &rcDocBody, DT_LEFT | DT_WORDBREAK);
+        RECT rcDocBody = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 16, inspectorLeft - 24, mainAreaBottom - 16 };
+        SelectObject(hdc, m_hFontEditor);
+        SetTextColor(hdc, pal.editorFg);
+        const std::wstring& comp = m_scriveningsEngine->GetCompositeText();
+        DrawTextW(hdc, comp.c_str(), -1, &rcDocBody, DT_LEFT | DT_WORDBREAK);
+    } else {
+        // Renderizar Editor Simple o Modo Guion
+        HBRUSH hBrEditor = CreateSolidBrush(pal.editorBg);
+        FillRect(hdc, &rcEditor, hBrEditor);
+        DeleteObject(hBrEditor);
+
+        RECT rcEditorHeader = { editorLeft, mainAreaTop, inspectorLeft, mainAreaTop + editorHeaderHeight };
+        HBRUSH hBrEdHeader = CreateSolidBrush(pal.editorHeaderBg);
+        FillRect(hdc, &rcEditorHeader, hBrEdHeader);
+        DeleteObject(hBrEdHeader);
+
+        SelectObject(hdc, m_hFontSmall);
+        SetTextColor(hdc, pal.editorHeaderFg);
+
+        std::wstring headerTitle = L"Manuscrito > Cap. 1: El Despertar > Escena 1.1: La Niebla";
+        if (m_splitManager && m_splitManager->IsActiveLocked()) {
+            headerTitle = L"🔒 " + headerTitle + L" [BLOQUEADO EN EL LUGAR]";
+        }
+        RECT rcDocPath = { editorLeft + 16, mainAreaTop, inspectorLeft - 120, mainAreaTop + editorHeaderHeight };
+        DrawTextW(hdc, headerTitle.c_str(), -1, &rcDocPath, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+        SelectObject(hdc, m_hFontMicro);
+        const wchar_t* badgeText = m_isScriptwritingMode ? L"MODO GUION" : L"BORRADOR FINAL";
+        m_themeEngine->DrawMicroBadge(hdc, inspectorLeft - 110, mainAreaTop + 6, badgeText, pal.badgeStatusBg, pal.badgeStatusFg, d.badgeHeight);
+
+        MoveToEx(hdc, editorLeft, mainAreaTop + editorHeaderHeight - 1, nullptr);
+        LineTo(hdc, inspectorLeft, mainAreaTop + editorHeaderHeight - 1);
+
+        if (m_isScriptwritingMode) {
+            RECT rcScriptHeader = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 16, inspectorLeft - 24, mainAreaTop + editorHeaderHeight + 46 };
+            SelectObject(hdc, m_hFontTitle);
+            SetTextColor(hdc, pal.accentPrimary);
+            DrawTextW(hdc, L"INT. CALLE VIEJA - NOCHE", -1, &rcScriptHeader, DT_LEFT | DT_SINGLELINE);
+
+            RECT rcScriptAction = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 50, inspectorLeft - 24, mainAreaTop + editorHeaderHeight + 110 };
+            SelectObject(hdc, m_hFontEditor);
+            SetTextColor(hdc, pal.editorFg);
+            DrawTextW(hdc, L"La lluvia cae incesante sobre los adoquines. Isabel corre, protegiendo un bolso bajo su abrigo.", -1, &rcScriptAction, DT_LEFT | DT_WORDBREAK);
+
+            RECT rcScriptChar = { editorLeft + 140, mainAreaTop + editorHeaderHeight + 120, inspectorLeft - 140, mainAreaTop + editorHeaderHeight + 145 };
+            SelectObject(hdc, m_hFontTitle);
+            DrawTextW(hdc, L"ISABEL", -1, &rcScriptChar, DT_LEFT | DT_SINGLELINE);
+
+            RECT rcScriptParen = { editorLeft + 110, mainAreaTop + editorHeaderHeight + 145, inspectorLeft - 110, mainAreaTop + editorHeaderHeight + 170 };
+            SelectObject(hdc, m_hFontSmall);
+            DrawTextW(hdc, L"(sin aliento)", -1, &rcScriptParen, DT_LEFT | DT_SINGLELINE);
+
+            RECT rcScriptDial = { editorLeft + 90, mainAreaTop + editorHeaderHeight + 170, inspectorLeft - 90, mainAreaBottom - 16 };
+            SelectObject(hdc, m_hFontEditor);
+            DrawTextW(hdc, L"Ya es medianoche... no tengo tiempo que perder.", -1, &rcScriptDial, DT_LEFT | DT_WORDBREAK);
+        } else {
+            RECT rcDocTitle = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 16, inspectorLeft - 24, mainAreaTop + editorHeaderHeight + 46 };
+            SelectObject(hdc, m_hFontTitle);
+            SetTextColor(hdc, pal.editorFg);
+            DrawTextW(hdc, L"Escena 1.1: La Niebla", -1, &rcDocTitle, DT_LEFT | DT_SINGLELINE);
+
+            RECT rcDocBody = { editorLeft + 24, mainAreaTop + editorHeaderHeight + 52, inspectorLeft - 24, mainAreaBottom - 16 };
+            SelectObject(hdc, m_hFontEditor);
+            SetTextColor(hdc, pal.editorFg);
+            const wchar_t* sampleParagraph =
+                L"La noche caía sobre las torres antiguas con una quietud espectral. Todo comenzaba aquí, en "
+                L"este preciso instante en que el reloj de la catedral marcaba las doce campanadas. Las calles "
+                L"adoquinadas brillaban bajo una fina capa de lluvia recién caída, reflejando la tímida luz ámbar de "
+                L"las farolas de gas.\n\n"
+                L"Isabel apretó el abrigo contra su pecho y aceleró el paso. Sabía que cada segundo contaba antes "
+                L"de que las sombras volvieran a moverse entre los soportales de la plaza mayor. En el bolsillo interior, "
+                L"el cuaderno encuadernado en piel contenía las coordenadas que nadie más debía descubrir.";
+            DrawTextW(hdc, sampleParagraph, -1, &rcDocBody, DT_LEFT | DT_WORDBREAK);
+        }
+    }
 
     // Separador Editor / Inspector
     SelectObject(hdc, hPenBorder);
@@ -494,8 +656,25 @@ void MainWindow::RenderUI(HDC hdc, const RECT& clientRect) {
     SelectObject(hdc, m_hFontSmall);
     SetTextColor(hdc, pal.statusBarFg);
 
-    RECT rcStatusLeft = { 12, mainAreaBottom + 3, width / 2, height - 1 };
-    DrawTextW(hdc, L"Palabras: 142 | Caracteres: 890 | Formato: .escr / .scrivx compatible", -1, &rcStatusLeft, DT_LEFT | DT_SINGLELINE);
+    std::wstringstream ssLeft;
+    ssLeft << L"Palabras: 142 | Caracteres: 890";
+    if (m_scriveningsEngine && m_scriveningsEngine->IsActive()) {
+        ssLeft << L" | [SCRIVENINGS: " << m_scriveningsEngine->GetSectionCount() << L" secciones]";
+    }
+    if (m_splitManager && m_splitManager->GetMode() != NativeSplitMode::Single) {
+        ssLeft << L" | [SPLIT]";
+    }
+    if (m_splitManager && m_splitManager->IsActiveLocked()) {
+        ssLeft << L" | [🔒 BLOQUEADO]";
+    }
+    if (m_isScriptwritingMode) {
+        ssLeft << L" | [GUION: DIÁLOGO]";
+    }
+    ssLeft << L" | Formato: .escr / .scrivx compatible";
+    std::wstring strLeft = ssLeft.str();
+
+    RECT rcStatusLeft = { 12, mainAreaBottom + 3, width / 2 + 100, height - 1 };
+    DrawTextW(hdc, strLeft.c_str(), -1, &rcStatusLeft, DT_LEFT | DT_SINGLELINE);
 
     std::wstringstream ssRight;
     ssRight << escritorio::themes::ThemeEngine::GetThemeName(m_themeEngine->GetCurrentMode())

@@ -8,6 +8,8 @@
 #include <string>
 #include <memory>
 #include "../themes/ThemeEngine.hpp"
+#include "ScriveningsEngine.hpp"
+#include "SplitEditorManager.hpp"
 
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "comctl32.lib")
@@ -25,6 +27,9 @@ namespace escritorio::ui {
  * - Renderizado en memoria de doble búfer libre de parpadeos (< 1ms por frame).
  * - Estructura visual tripartita de Scrivener 3 (Binder, Editor, Inspector).
  * - Motor visual con los 7 modos predefinidos y conmutación de densidad UI (Ultra-Compacto 28px/24px/10px).
+ * - Modo Scrivenings continuo (Ctrl+1) con títulos in-situ y separadores configurables.
+ * - Pantalla dividida hasta 4 paneles (Ctrl+', Ctrl+", Grid) y Lock in Place (Ctrl+Shift+L).
+ * - Modo Escritura de Guiones (Ctrl+8).
  */
 class MainWindow {
 public:
@@ -38,6 +43,18 @@ public:
     void SwitchTheme(escritorio::themes::ThemeMode mode);
     void CycleTheme();
     void SetUIDensity(escritorio::themes::UIDensityMode density);
+
+    // Nuevas funciones de Prompt 07
+    void ToggleScrivenings();
+    void SplitVertical();
+    void SplitHorizontal();
+    void SplitGrid();
+    void CloseSplit();
+    void ToggleLockActivePane();
+    void ToggleScriptwritingMode();
+
+    ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
+    SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -53,6 +70,9 @@ private:
     double m_lastThemeSwitchMs = 0.0;
 
     std::unique_ptr<escritorio::themes::ThemeEngine> m_themeEngine;
+    std::unique_ptr<ScriveningsEngine> m_scriveningsEngine;
+    std::unique_ptr<SplitEditorManager> m_splitManager;
+    bool m_isScriptwritingMode = false;
 
     HFONT m_hFontTitle = nullptr;
     HFONT m_hFontBody = nullptr;

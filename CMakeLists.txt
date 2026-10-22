@@ -35,6 +35,10 @@ set(SOURCES
     src/ui/BinderWidget.cpp
     src/ui/EditorWidget.hpp
     src/ui/EditorWidget.cpp
+    src/ui/ScriveningsEngine.hpp
+    src/ui/ScriveningsEngine.cpp
+    src/ui/SplitEditorManager.hpp
+    src/ui/SplitEditorManager.cpp
     src/ui/MainWindow.hpp
     src/ui/MainWindow.cpp
     resources.rc
