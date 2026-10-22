@@ -2,10 +2,21 @@
 Inspector View para Escritorio
 Panel lateral derecho multifunción: Sinopsis, Notas generales, Metadatos de documento,
 Marcadores de proyecto, Comentarios, Notas al pie e Instantáneas históricas (Snapshots).
+Retrocompatible con InspectorWidget.
 """
 
 from typing import Optional, Dict, Any, List
-from ..core.project import BinderItem
+from ..core.project import BinderItem, EscritorioProject
+from .InspectorWidget import (
+    InspectorWidget,
+    InspectorTabId,
+    TabNotesSynopsis,
+    TabBookmarks,
+    TabMetadata,
+    TabSnapshots,
+    TabCommentsFootnotes
+)
+
 
 class InspectorTab:
     SYNOPSIS = "synopsis"
@@ -15,32 +26,12 @@ class InspectorTab:
     COMMENTS = "comments"
     SNAPSHOTS = "snapshots"
 
-class InspectorView:
-    """Controlador y lógica del panel de inspección contextual."""
 
-    def __init__(self):
-        self.active_item: Optional[BinderItem] = None
-        self.active_tab: str = InspectorTab.SYNOPSIS
+class InspectorView(InspectorWidget):
+    """Controlador y lógica del panel de inspección contextual retrocompatible."""
 
-    def set_item(self, item: BinderItem):
-        self.active_item = item
-
-    def set_tab(self, tab_name: str):
-        self.active_tab = tab_name
-
-    def get_synopsis(self) -> str:
-        return self.active_item.read_synopsis() if self.active_item else ""
-
-    def update_synopsis(self, text: str):
-        if self.active_item:
-            self.active_item.write_synopsis(text)
-
-    def get_notes_rtf(self) -> str:
-        return self.active_item.read_notes_rtf() if self.active_item else ""
-
-    def update_notes_rtf(self, rtf: str):
-        if self.active_item:
-            self.active_item.write_notes_rtf(rtf)
+    def __init__(self, project: Optional[EscritorioProject] = None):
+        super().__init__(project=project)
 
     def get_metadata(self) -> Dict[str, Any]:
         if not self.active_item:
@@ -48,11 +39,11 @@ class InspectorView:
         d = self.active_item.data
         return {
             "uuid": d.uuid,
-            "section_type": d.section_type,
-            "label_id": d.label_id,
-            "status_id": d.status_id,
-            "include_in_compile": d.include_in_compile,
-            "custom_metadata": d.custom_metadata,
-            "created": d.created,
-            "modified": d.modified
+            "section_type": getattr(d, "section_type", "Structure Based"),
+            "label_id": getattr(d, "label_id", -1),
+            "status_id": getattr(d, "status_id", -1),
+            "include_in_compile": getattr(d, "include_in_compile", True),
+            "custom_metadata": getattr(d, "custom_metadata", {}),
+            "created": getattr(d, "created", ""),
+            "modified": getattr(d, "modified", "")
         }

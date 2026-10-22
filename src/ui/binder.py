@@ -1,75 +1,40 @@
 """
 Binder View para Escritorio
-Visualización jerárquica del árbol de documentos, carpetas del sistema (Manuscrito, Investigación, Papelera)
-y gestión de estados, etiquetas de color e iconos vectoriales.
+Compatibilidad e integración del Cuaderno con BinderWidget, árbol jerárquico multinivel,
+capacidades duales de nodos, colecciones y personalización cromática.
 """
 
 from typing import Optional, Callable, Dict, Any, List
 from ..core.project import BinderItem, EscritorioProject
+from .BinderWidget.binder_widget import BinderWidget
+from .BinderWidget.binder_tree_view import BinderTreeView, LabelColorMode
+from .BinderWidget.icon_library import IconLibrary
+from .BinderWidget.collections_bar import CollectionsManager
 
-class BinderView:
-    """Controlador y lógica del árbol del Binder (panel lateral izquierdo)."""
+class BinderView(BinderWidget):
+    """
+    Controlador y lógica del árbol del Binder (panel lateral izquierdo).
+    Hereda todas las capacidades estructurales, narrativas y de colecciones de BinderWidget.
+    """
 
     def __init__(self, project: Optional[EscritorioProject] = None):
-        self.project = project
-        self.selected_uuid: Optional[str] = None
+        super().__init__(project)
         self.on_selection_changed: Optional[Callable[[str], None]] = None
-        self.expanded_nodes: set = set()
 
-    def set_project(self, project: EscritorioProject):
-        self.project = project
-        self.selected_uuid = None
-        if project and project.root_items:
-            # Seleccionar por defecto el primer elemento del borrador
-            draft = project.root_items[0]
-            if draft.children:
-                self.selected_uuid = draft.children[0].uuid
-            else:
-                self.selected_uuid = draft.uuid
+    def _on_tree_selection_changed(self, uuids: List[str]):
+        super()._on_tree_selection_changed(uuids)
+        if uuids and self.on_selection_changed:
+            self.on_selection_changed(uuids[0])
 
     def select_item(self, uuid: str):
-        """Selecciona un nodo del binder y notifica a las vistas conectadas."""
-        self.selected_uuid = uuid
-        if self.on_selection_changed:
-            self.on_selection_changed(uuid)
+        self.tree_view.select_item(uuid)
 
     def toggle_expand(self, uuid: str):
-        """Alterna el estado expandido/colapsado de una carpeta."""
-        if uuid in self.expanded_nodes:
-            self.expanded_nodes.remove(uuid)
-        else:
-            self.expanded_nodes.add(uuid)
+        self.tree_view.toggle_expand(uuid)
+
+    @property
+    def expanded_nodes(self) -> set:
+        return self.tree_view.expanded_nodes
 
     def get_render_tree(self) -> List[Dict[str, Any]]:
-        """Genera la estructura procesada para el renderizado del árbol en la interfaz."""
-        if not self.project:
-            return []
-
-        def build_node(item: BinderItem, depth: int) -> Dict[str, Any]:
-            label_color = "transparent"
-            if item.data.label_id != -1 and self.project:
-                lbl = self.project.project_data.get("labels", {}).get(item.data.label_id)
-                if lbl:
-                    label_color = lbl.color_rgba
-
-            status_text = ""
-            if item.data.status_id != -1 and self.project:
-                st = self.project.project_data.get("statuses", {}).get(item.data.status_id)
-                if st:
-                    status_text = st.name
-
-            return {
-                "uuid": item.uuid,
-                "title": item.title,
-                "type": item.item_type,
-                "depth": depth,
-                "is_selected": (item.uuid == self.selected_uuid),
-                "is_expanded": (item.uuid in self.expanded_nodes),
-                "has_children": len(item.data.children) > 0,
-                "word_count": item.get_word_count() if item.item_type == "Text" else 0,
-                "label_color": label_color,
-                "status": status_text,
-                "children": [build_node(child, depth + 1) for child in item.children]
-            }
-
-        return [build_node(root, 0) for root in self.project.root_items]
+        return self.tree_view.get_render_tree()

@@ -32,11 +32,17 @@ class RTFEngine:
                 continue
             elif code < 128:
                 escaped_chars.append(char)
-            else:
-                # Carácter Unicode representado con \uN?
-                # En RTF, los enteros con signo mayores a 32767 se representan como negativos
+            elif code <= 0xFFFF:
+                # Carácter Unicode en el Plano Multilingüe Básico (BMP)
                 signed_code = code if code <= 32767 else code - 65536
                 escaped_chars.append(f"\\u{signed_code}?")
+            else:
+                # Caracteres de plano astral (ej. emojis) codificados como pares de sustitutos UTF-16
+                high = 0xD800 + ((code - 0x10000) >> 10)
+                low = 0xDC00 + ((code - 0x10000) & 0x3FF)
+                signed_high = high - 65536
+                signed_low = low - 65536
+                escaped_chars.append(f"\\u{signed_high}?\\u{signed_low}?")
 
         body_rtf = "".join(escaped_chars)
 
@@ -76,6 +82,10 @@ class RTFEngine:
                 return ""
 
         text = re.sub(r"\\u(-?\d+)\??", replace_unicode, text)
+        try:
+            text = text.encode("utf-16", "surrogatepass").decode("utf-16")
+        except Exception:
+            pass
 
         # Eliminar comandos restantes de control de RTF tipo \b, \i, \fs24, \cf0, etc.
         text = re.sub(r"\\[a-zA-Z]+(-?\d+)?\s?", "", text)

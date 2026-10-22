@@ -35,6 +35,7 @@ class TestScrivenerFidelity(unittest.TestCase):
         sample_text = "La noche caía sobre las torres con una quietud espectral. Todo comenzaba aquí."
         scene.write_content_rtf(RTFEngine.plain_text_to_rtf(sample_text))
         scene.write_synopsis("Primera escena introductoria.")
+        proj.close()
 
         # Reabrir desde disco
         reopened = EscritorioProject(proj_path)
@@ -49,6 +50,7 @@ class TestScrivenerFidelity(unittest.TestCase):
         raw_text = RTFEngine.rtf_to_plain_text(loaded_scene.read_content_rtf())
         self.assertIn("La noche caía sobre las torres", raw_text)
         self.assertGreater(loaded_scene.get_word_count(), 10)
+        reopened.close()
 
 if __name__ == "__main__":
     unittest.main()
