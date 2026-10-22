@@ -125,6 +125,16 @@ class BinderItem:
         self._content_loaded = True
         self.mark_dirty()
 
+    def get_content_plain(self) -> str:
+        """Devuelve el contenido del documento en texto plano extraído del RTF."""
+        rtf = self.read_content_rtf()
+        return RTFEngine.rtf_to_plain_text(rtf)
+
+    def set_content_plain(self, text: str):
+        """Asigna contenido desde texto plano convirtiéndolo a RTF estándar."""
+        rtf = RTFEngine.plain_text_to_rtf(text)
+        self.write_content_rtf(rtf)
+
     def read_synopsis(self) -> str:
         """Carga la sinopsis para tarjetas del corcho (synopsis.txt) de forma diferida."""
         if not self._synopsis_loaded:
@@ -141,6 +151,73 @@ class BinderItem:
         self._cached_synopsis = text
         self._synopsis_loaded = True
         self.mark_dirty()
+
+    def get_synopsis(self) -> str:
+        return self.read_synopsis()
+
+    def set_synopsis(self, text: str):
+        self.write_synopsis(text)
+
+    @property
+    def synopsis(self) -> str:
+        return self.read_synopsis()
+
+    @synopsis.setter
+    def synopsis(self, text: str):
+        self.write_synopsis(text)
+
+    def get_word_count(self) -> int:
+        """Calcula el número de palabras del contenido textual del nodo."""
+        try:
+            plain = self.get_content_plain()
+            return len(plain.split()) if plain.strip() else 0
+        except Exception:
+            return 0
+
+    def get_total_word_count(self) -> int:
+        """Calcula de forma recursiva el total de palabras (nodo propio + hijos)."""
+        total = self.get_word_count()
+        for child in self.children:
+            total += child.get_total_word_count()
+        return total
+
+    def create_snapshot(self, title: str = "Instantánea") -> Dict[str, Any]:
+        """Crea una instantánea histórica en Files/Snapshots/<UUID>/."""
+        from ..ui.InspectorWidget.tab_snapshots import TabSnapshots
+        tab = TabSnapshots(self.project)
+        tab.set_item(self)
+        snap = tab.take_snapshot(title=title)
+        plain = self.get_content_plain()
+        return {
+            "id": snap.id if snap else "",
+            "title": snap.title if snap else title,
+            "timestamp": snap.date if snap else "",
+            "content": plain,
+            "word_count": snap.word_count if snap else 0
+        }
+
+    def get_snapshots(self) -> List[Dict[str, Any]]:
+        """Devuelve el historial de instantáneas guardadas para este documento."""
+        from ..ui.InspectorWidget.tab_snapshots import TabSnapshots
+        tab = TabSnapshots(self.project)
+        tab.set_item(self)
+        res = []
+        for s in tab.snapshots:
+            content = ""
+            if s.file_path and Path(s.file_path).exists():
+                try:
+                    rtf = Path(s.file_path).read_text(encoding="utf-8")
+                    content = RTFEngine.rtf_to_plain_text(rtf)
+                except Exception:
+                    pass
+            res.append({
+                "id": s.id,
+                "title": s.title,
+                "timestamp": s.date,
+                "content": content,
+                "word_count": s.word_count
+            })
+        return res
 
     def read_notes_rtf(self) -> str:
         """Carga las notas del inspector (notes.rtf) de forma diferida."""
@@ -472,6 +549,14 @@ class EscritorioProject:
 
     find_item = get_item
 
+    @property
+    def title(self) -> str:
+        return self.project_data.get("title", self.project_dir.stem if hasattr(self, "project_dir") else "Proyecto")
+
+    @title.setter
+    def title(self, val: str):
+        self.project_data["title"] = val
+
     def get_all_items(self) -> List[BinderItem]:
         """Devuelve una lista con todos los nodos Binder del proyecto."""
         return list(self.items_by_uuid.values())
@@ -496,6 +581,8 @@ class EscritorioProject:
         self.save_structure()
         return new_item
 
+    create_item = add_item
+
     # =========================================================================
     # Navegación y Operaciones Estructurales del Binder
     # =========================================================================
@@ -517,6 +604,18 @@ class EscritorioProject:
             if item.item_type == "TrashFolder":
                 return item
         return None
+
+    @property
+    def draft_folder(self) -> Optional[BinderItem]:
+        return self.get_draft_folder()
+
+    @property
+    def research_folder(self) -> Optional[BinderItem]:
+        return self.get_research_folder()
+
+    @property
+    def trash_folder(self) -> Optional[BinderItem]:
+        return self.get_trash_folder()
 
     def get_templates_folder(self) -> Optional[BinderItem]:
         for item in self.items_by_uuid.values():

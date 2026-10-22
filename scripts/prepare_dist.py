@@ -29,13 +29,25 @@ def main():
     DICTS_DIR.mkdir(parents=True, exist_ok=True)
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 1. Copiar binario optimizado
-    print("[2/7] Copiando binario único optimizado Escritorio.exe...")
-    src_exe = ROOT_DIR / "build" / "release" / "Escritorio.exe"
+    # 1. Copiar binario nativo y runtime portable
+    print("[2/7] Copiando binario nativo optimizado Escritorio.exe y runtime portable...")
+    src_build = ROOT_DIR / "dist" / "Escritorio"
+    src_exe = src_build / "Escritorio.exe"
+    if not src_exe.exists():
+        src_exe = ROOT_DIR / "build" / "release" / "Escritorio.exe"
     if not src_exe.exists():
         raise FileNotFoundError(f"No se encontró el binario: {src_exe}")
     dest_exe = DIST_DIR / "Escritorio.exe"
     shutil.copy2(src_exe, dest_exe)
+
+    src_internal = src_build / "_internal"
+    if src_internal.exists():
+        dest_internal = DIST_DIR / "_internal"
+        if dest_internal.exists():
+            shutil.rmtree(dest_internal)
+        shutil.copytree(src_internal, dest_internal)
+        print(f"      -> Runtime _internal copiado con éxito ({len(list(dest_internal.rglob('*')))} componentes).")
+
     print(f"      -> Escritorio.exe ({dest_exe.stat().st_size:,} bytes) copiado con éxito.")
 
     # 2. Configuración portable por defecto

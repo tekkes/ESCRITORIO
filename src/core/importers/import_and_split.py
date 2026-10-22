@@ -45,6 +45,10 @@ class ImportAndSplit:
         """
         Importa un archivo largo, lo divide y crea los nodos correspondientes en el Binder.
         """
+        # Permitir argumentos en orden (source_path, project) o (project, source_path)
+        if hasattr(source_path, "get_draft_folder") or hasattr(source_path, "project_dir"):
+            source_path, project = project, source_path
+
         path = Path(source_path)
         if not path.exists():
             raise FileNotFoundError(f"Archivo de origen no encontrado: {path}")
@@ -282,17 +286,33 @@ class ImportAndSplit:
 
     @classmethod
     def _split_text_by_separator(cls, text: str, separator: str) -> List[SectionUnit]:
-        """Divide el texto usando un separador explícito."""
+        """Divide el texto usando un separador explícito (ej. '#', '***', '---')."""
         escaped_sep = re.escape(separator)
-        parts = re.split(rf"(?:\n|^)\s*{escaped_sep}\s*(?:\n|$)", text)
+        pattern = rf"(?:^|\n)[ \t]*{escaped_sep}(?:[ \t]+([^\n\r]*)|[ \t]*)(?:\n|$)"
+        matches = list(re.finditer(pattern, text))
         units: List[SectionUnit] = []
-        for i, part in enumerate(parts, 1):
-            stripped = part.strip()
-            if not stripped:
-                continue
-            first_line = stripped.split("\n")[0][:40].strip()
-            title = first_line if first_line else f"Sección {i}"
-            units.append(SectionUnit(title=title, content=stripped, level=1))
+        if matches:
+            for idx, match in enumerate(matches):
+                start_content = match.end()
+                end_content = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+                content = text[start_content:end_content].strip()
+                title_cand = match.group(1)
+                if not title_cand:
+                    first_line = content.split("\n")[0][:40].strip() if content else ""
+                    title = first_line if first_line else f"Sección {idx + 1}"
+                else:
+                    title = title_cand.strip()
+                units.append(SectionUnit(title=title, content=content, level=1))
+        else:
+            # Fallback a split tradicional por delimitador exacto
+            parts = re.split(rf"(?:\n|^)\s*{escaped_sep}\s*(?:\n|$)", text)
+            for i, part in enumerate(parts, 1):
+                stripped = part.strip()
+                if not stripped:
+                    continue
+                first_line = stripped.split("\n")[0][:40].strip()
+                title = first_line if first_line else f"Sección {i}"
+                units.append(SectionUnit(title=title, content=stripped, level=1))
         return units
 
     @classmethod
