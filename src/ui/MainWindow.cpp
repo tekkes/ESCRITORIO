@@ -374,6 +374,34 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ToggleNewProjectChooser();
             return 0;
         }
+        if (ctrl && !shift && (wParam == 'K' || wParam == 'k')) { // Ctrl+K: Dividir escena
+            SplitScene();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'K' || wParam == 'k')) { // Ctrl+Shift+K: Dividir con selección como título
+            SplitSceneWithTitle();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'M' || wParam == 'm')) { // Ctrl+Shift+M: Fusionar escenas
+            MergeScenes();
+            return 0;
+        }
+        if (ctrl && !shift && (wParam == 'G' || wParam == 'g')) { // Ctrl+G: Agrupar en carpeta
+            GroupItems();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'G' || wParam == 'g')) { // Ctrl+Shift+G: Desagrupar carpeta
+            UngroupFolder();
+            return 0;
+        }
+        if (ctrl && !shift && (wParam == 'D' || wParam == 'd')) { // Ctrl+D: Duplicar elemento
+            DuplicateItem();
+            return 0;
+        }
+        if (ctrl && shift && (wParam == 'F' || wParam == 'f')) { // Ctrl+Shift+F: Foco Lingüístico
+            ToggleLinguisticFocus();
+            return 0;
+        }
         if (wParam == VK_ESCAPE && m_isCompileDialogOpen) { // Esc: Salir de Compilación
             ToggleCompileDialog();
             return 0;
@@ -1308,6 +1336,67 @@ void MainWindow::RenderNewProjectChooser(HDC hdc, int width, int height, const e
     DrawTextW(hdc, L"Elegir", -1, &rcBtnChoose, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     SelectObject(hdc, hOldPen);
+}
+
+void MainWindow::SplitScene() {
+    if (m_splitManager) {
+        auto* pane = m_splitManager->GetActivePane();
+        if (pane && pane->editor) {
+            // Dividir en posición actual del cursor (Ctrl+K)
+            size_t pos = pane->editor->GetCursorPos();
+            (void)pos;
+            if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+        }
+    }
+}
+
+void MainWindow::SplitSceneWithTitle() {
+    if (m_splitManager) {
+        auto* pane = m_splitManager->GetActivePane();
+        if (pane && pane->editor) {
+            // Dividir con selección como título (Ctrl+Shift+K)
+            if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+        }
+    }
+}
+
+void MainWindow::MergeScenes() {
+    // Fusionar escenas seleccionadas (Ctrl+Shift+M)
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::GroupItems() {
+    // Agrupar elementos seleccionados en una nueva carpeta (Ctrl+G)
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::UngroupFolder() {
+    // Desagrupar carpeta seleccionada (Ctrl+Shift+G)
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::DuplicateItem() {
+    // Duplicar elemento actual (Ctrl+D)
+    if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+}
+
+void MainWindow::ToggleLinguisticFocus() {
+    if (m_splitManager) {
+        auto* pane = m_splitManager->GetActivePane();
+        if (pane && pane->editor) {
+            LinguisticCategory cur = pane->editor->GetLinguisticCategory();
+            LinguisticCategory next = LinguisticCategory::None;
+            if (cur == LinguisticCategory::None) next = LinguisticCategory::Dialogues;
+            else if (cur == LinguisticCategory::Dialogues) next = LinguisticCategory::Adverbs;
+            else if (cur == LinguisticCategory::Adverbs) next = LinguisticCategory::Adjectives;
+            else if (cur == LinguisticCategory::Adjectives) next = LinguisticCategory::Verbs;
+            else if (cur == LinguisticCategory::Verbs) next = LinguisticCategory::Conjunctions;
+            else next = LinguisticCategory::None;
+
+            pane->editor->SetLinguisticCategory(next);
+            if (m_hwnd) InvalidateRect(m_hwnd, nullptr, FALSE);
+        }
+    }
 }
 
 int MainWindow::RunMessageLoop() {

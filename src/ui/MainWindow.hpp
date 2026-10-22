@@ -64,6 +64,15 @@ public:
     void ToggleCompileDialog();
     void ToggleNewProjectChooser();
 
+    // Funciones de Estructura Narrativa, Binder y Editor (Fase A)
+    void SplitScene();                     // Ctrl+K
+    void SplitSceneWithTitle();            // Ctrl+Shift+K
+    void MergeScenes();                    // Ctrl+Shift+M
+    void GroupItems();                     // Ctrl+G
+    void UngroupFolder();                  // Ctrl+Shift+G
+    void DuplicateItem();                  // Ctrl+D
+    void ToggleLinguisticFocus();          // Ctrl+Shift+F
+
     ScriveningsEngine* GetScriveningsEngine() { return m_scriveningsEngine.get(); }
     SplitEditorManager* GetSplitManager() { return m_splitManager.get(); }
     CorkboardWidget* GetCorkboardWidget() { return m_corkboardWidget.get(); }

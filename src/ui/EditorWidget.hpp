@@ -79,9 +79,13 @@ public:
     void SetItemUuid(const std::wstring& uuid, const std::wstring& title);
     const std::wstring& GetItemUuid() const { return m_itemUuid; }
 
-    // Métricas
+    // Métricas y cursor
     size_t GetWordCount() const;
     size_t GetCharacterCount() const;
+    size_t GetCursorPos() const { return m_cursorPos; }
+    void SetCursorPos(size_t pos) { m_cursorPos = pos; }
+    size_t GetSelectionStart() const { return m_selStart; }
+    size_t GetSelectionEnd() const { return m_selEnd; }
 
     // Regla horizontal (Ctrl+Shift+R)
     bool ToggleRuler() { m_showRuler = !m_showRuler; return m_showRuler; }

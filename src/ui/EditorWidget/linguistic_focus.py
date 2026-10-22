@@ -161,11 +161,28 @@ class LinguisticFocusEngine:
     def set_category(self, cat: LinguisticCategory):
         self.active_category = cat
 
-    def analyze(self, text: str, category: Optional[LinguisticCategory] = None) -> List[HighlightSpan]:
+    def analyze(self, text: Optional[str] = None, category: Optional[Any] = None, language: str = "es") -> List[HighlightSpan]:
         """
         Analiza el texto y devuelve los tramos (spans) resaltados según la categoría activa.
+        Soporta invocación como método de instancia o como llamada estática:
+        - engine.analyze(text, category)
+        - LinguisticFocusEngine.analyze(text, category, language="es")
         """
+        if not isinstance(self, LinguisticFocusEngine):
+            # Invocado como función estática / método no ligado
+            actual_text = str(self) if self is not None else ""
+            actual_cat = text
+            actual_lang = category if isinstance(category, str) else language
+            engine = LinguisticFocusEngine(language=actual_lang)
+            return engine.analyze(actual_text, actual_cat)
+
         cat = category or self.active_category
+        if isinstance(cat, str):
+            for c in LinguisticCategory:
+                if c.value.lower() == cat.lower() or c.name.lower() == cat.lower():
+                    cat = c
+                    break
+
         if cat == LinguisticCategory.NONE or not text:
             return []
 

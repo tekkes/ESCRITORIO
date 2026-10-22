@@ -264,6 +264,82 @@ std::vector<HighlightSpanNative> EditorWidget::AnalyzeLinguisticFocus() const {
                 }
             }
         }
+    } else if (m_linguisticCategory == LinguisticCategory::Adjectives) {
+        // Adjetivos comunes y sufijos descriptivos
+        size_t wordStart = 0;
+        bool inWord = false;
+        for (size_t i = 0; i <= m_plainText.length(); ++i) {
+            bool isEnd = (i == m_plainText.length()) || std::iswspace(m_plainText[i]) || std::iswpunct(m_plainText[i]);
+            if (!inWord && !isEnd) {
+                inWord = true;
+                wordStart = i;
+            } else if (inWord && isEnd) {
+                inWord = false;
+                std::wstring word = m_plainText.substr(wordStart, i - wordStart);
+                std::transform(word.begin(), word.end(), word.begin(), ::towlower);
+                if (word == L"bueno" || word == L"buena" || word == L"malo" || word == L"mala" ||
+                    word == L"grande" || word == L"pequeño" || word == L"pequeña" || word == L"alto" ||
+                    word == L"alta" || word == L"bajo" || word == L"baja" || word == L"nuevo" ||
+                    word == L"nueva" || word == L"viejo" || word == L"vieja" || word == L"hermoso" ||
+                    word == L"hermosa" || word == L"bello" || word == L"bella" || word == L"oscuro" ||
+                    word == L"oscura" || word == L"claro" || word == L"clara" || word == L"brillante" ||
+                    (word.length() > 5 && (word.rfind(L"oso") == word.length() - 3 || word.rfind(L"osa") == word.length() - 3 ||
+                                           word.rfind(L"ible") == word.length() - 4 || word.rfind(L"able") == word.length() - 4 ||
+                                           word.rfind(L"ante") == word.length() - 4 || word.rfind(L"ente") == word.length() - 4))) {
+                    spans.push_back({wordStart, i, LinguisticCategory::Adjectives});
+                }
+            }
+        }
+    } else if (m_linguisticCategory == LinguisticCategory::Verbs) {
+        // Formas verbales comunes y desinencias
+        size_t wordStart = 0;
+        bool inWord = false;
+        for (size_t i = 0; i <= m_plainText.length(); ++i) {
+            bool isEnd = (i == m_plainText.length()) || std::iswspace(m_plainText[i]) || std::iswpunct(m_plainText[i]);
+            if (!inWord && !isEnd) {
+                inWord = true;
+                wordStart = i;
+            } else if (inWord && isEnd) {
+                inWord = false;
+                std::wstring word = m_plainText.substr(wordStart, i - wordStart);
+                std::transform(word.begin(), word.end(), word.begin(), ::towlower);
+                if (word == L"es" || word == L"son" || word == L"era" || word == L"eran" ||
+                    word == L"fue" || word == L"fueron" || word == L"está" || word == L"están" ||
+                    word == L"estaba" || word == L"estaban" || word == L"ha" || word == L"han" ||
+                    word == L"había" || word == L"habían" || word == L"tiene" || word == L"tienen" ||
+                    word == L"tenía" || word == L"tenían" || word == L"hace" || word == L"hacen" ||
+                    word == L"hizo" || word == L"hicieron" || word == L"dice" || word == L"dicen" ||
+                    word == L"dijo" || word == L"dijeron" || word == L"va" || word == L"van" ||
+                    word == L"ve" || word == L"ven" || word == L"vio" || word == L"vieron" ||
+                    (word.length() > 4 && (word.rfind(L"ando") == word.length() - 4 || word.rfind(L"iendo") == word.length() - 5 ||
+                                           word.rfind(L"aron") == word.length() - 4 || word.rfind(L"ieron") == word.length() - 5))) {
+                    spans.push_back({wordStart, i, LinguisticCategory::Verbs});
+                }
+            }
+        }
+    } else if (m_linguisticCategory == LinguisticCategory::Conjunctions) {
+        // Conjunciones en español e inglés
+        size_t wordStart = 0;
+        bool inWord = false;
+        for (size_t i = 0; i <= m_plainText.length(); ++i) {
+            bool isEnd = (i == m_plainText.length()) || std::iswspace(m_plainText[i]) || std::iswpunct(m_plainText[i]);
+            if (!inWord && !isEnd) {
+                inWord = true;
+                wordStart = i;
+            } else if (inWord && isEnd) {
+                inWord = false;
+                std::wstring word = m_plainText.substr(wordStart, i - wordStart);
+                std::transform(word.begin(), word.end(), word.begin(), ::towlower);
+                if (word == L"y" || word == L"e" || word == L"ni" || word == L"que" ||
+                    word == L"o" || word == L"u" || word == L"pero" || word == L"mas" ||
+                    word == L"sino" || word == L"porque" || word == L"pues" || word == L"como" ||
+                    word == L"si" || word == L"aunque" || word == L"mientras" || word == L"luego" ||
+                    word == L"and" || word == L"but" || word == L"or" || word == L"nor" ||
+                    word == L"for" || word == L"yet" || word == L"so" || word == L"because") {
+                    spans.push_back({wordStart, i, LinguisticCategory::Conjunctions});
+                }
+            }
+        }
     }
     return spans;
 }

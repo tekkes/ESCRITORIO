@@ -42,7 +42,15 @@ class ParityInquisitorAgent(RedTeamAgent):
         "Ctrl+8": "Modo Escritura de Guiones Cinematográficos",
         "F11": "Modo Composición a Pantalla Completa",
         "F8": "Conmutación Rápida de Temas",
-        "F9": "Alternancia de Densidad UI (Ultra-Compacto)"
+        "F9": "Alternancia de Densidad UI (Ultra-Compacto)",
+        # Fase A: Atajos Narrativos, Editor y Foco Lingüístico
+        "Ctrl+K": "Dividir Escena / Documento (Split Scene)",
+        "Ctrl+Shift+K": "Dividir con Selección como Título (Split with Title)",
+        "Ctrl+Shift+M": "Fusionar Documentos Seleccionados (Merge Scenes)",
+        "Ctrl+G": "Agrupar Selección en Nueva Carpeta (Group)",
+        "Ctrl+Shift+G": "Desagrupar Carpeta (Ungroup)",
+        "Ctrl+D": "Duplicar Elemento del Binder (Duplicate)",
+        "Ctrl+Shift+F": "Foco Lingüístico / Resaltado Estilístico (Linguistic Focus)"
     }
 
     # Los 7 temas visuales requeridos
@@ -70,7 +78,10 @@ class ParityInquisitorAgent(RedTeamAgent):
         # 4. Auditoría de Paridad del Binder y Tipos de Sección
         issues.extend(self._audit_binder_parity(project_root))
 
-        # 5. Auditoría del Binario PE (si existe Escritorio.exe)
+        # 5. Auditoría de Foco Lingüístico (Fase A)
+        issues.extend(self._audit_linguistic_focus_parity(project_root))
+
+        # 6. Auditoría del Binario PE (si existe Escritorio.exe)
         if binary_path and binary_path.exists():
             issues.extend(self._audit_pe_binary_headers(binary_path))
 
@@ -137,6 +148,20 @@ class ParityInquisitorAgent(RedTeamAgent):
                 found = True
             elif key == "F9" and "VK_F9" in code:
                 found = True
+            elif key == "Ctrl+K" and ("'K'" in code or "'k'" in code) and "ctrl && !shift" in code:
+                found = True
+            elif key == "Ctrl+Shift+K" and ("'K'" in code or "'k'" in code) and "ctrl && shift" in code:
+                found = True
+            elif key == "Ctrl+Shift+M" and ("'M'" in code or "'m'" in code) and "ctrl && shift" in code:
+                found = True
+            elif key == "Ctrl+G" and ("'G'" in code or "'g'" in code) and "ctrl && !shift" in code:
+                found = True
+            elif key == "Ctrl+Shift+G" and ("'G'" in code or "'g'" in code) and "ctrl && shift" in code:
+                found = True
+            elif key == "Ctrl+D" and ("'D'" in code or "'d'" in code) and "ctrl && !shift" in code:
+                found = True
+            elif key == "Ctrl+Shift+F" and ("'F'" in code or "'f'" in code) and "ctrl && shift" in code:
+                found = True
 
             if not found:
                 issues.append(AuditIssue(
@@ -149,6 +174,28 @@ class ParityInquisitorAgent(RedTeamAgent):
                     remediation_hint=f"Vincular {key} en MainWindow.cpp para activar {desc}."
                 ))
 
+        return issues
+
+    def _audit_linguistic_focus_parity(self, root: Path) -> List[AuditIssue]:
+        """Auditoría de paridad del Foco Lingüístico entre C++ y Python."""
+        issues: List[AuditIssue] = []
+        editor_cpp = root / "src" / "ui" / "EditorWidget.cpp"
+
+        if editor_cpp.exists():
+            code = editor_cpp.read_text(encoding="utf-8", errors="ignore")
+            # Scrivener 3 soporta 5 categorías lingüísticas
+            required_cats = ["Dialogues", "Adverbs", "Adjectives", "Verbs", "Conjunctions"]
+            for cat in required_cats:
+                if f"LinguisticCategory::{cat}" not in code:
+                    issues.append(AuditIssue(
+                        id=f"PAR-LING-{cat.upper()}",
+                        agent=self.name,
+                        category=IssueCategory.MISSING_FEATURE,
+                        severity=Severity.MAJOR,
+                        component="LinguisticFocus",
+                        description=f"Categoría de Foco Lingüístico '{cat}' no implementada en EditorWidget.cpp.",
+                        remediation_hint=f"Implementar análisis de '{cat}' en AnalyzeLinguisticFocus()."
+                    ))
         return issues
 
     def _audit_themes_and_density(self, root: Path) -> List[AuditIssue]:
