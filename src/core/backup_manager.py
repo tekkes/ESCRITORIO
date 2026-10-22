@@ -28,6 +28,18 @@ class BackupManager:
                 h.update(chunk)
         return h.hexdigest()
 
+    @classmethod
+    def create_backup_zip(
+        cls,
+        project_path: Union[str, Path],
+        backup_dir: Union[str, Path],
+        project_title: Optional[str] = None
+    ):
+        """Método de clase de conveniencia para empaquetar un backup ZIP y retornar (path, sha256)."""
+        mgr = cls(backup_dir)
+        res = mgr.create_project_backup(project_path, project_title)
+        return str(res["path"]), res["sha256"]
+
     def create_project_backup(self, project_path: Union[str, Path], project_title: Optional[str] = None) -> Dict[str, Any]:
         """
         Empaqueta el directorio del proyecto (.scriv o .escr) en un archivo ZIP con marca temporal.
