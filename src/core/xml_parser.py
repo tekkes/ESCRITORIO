@@ -27,6 +27,16 @@ class BinderItemData:
     target_words: int = 0
     children: List['BinderItemData'] = field(default_factory=list)
 
+# Tipos de elementos canónicos del Binder en Scrivener 3 y Escritorio
+CANONICAL_BINDER_TYPES = {
+    "DraftFolder": "Carpeta contenedora del Manuscrito / Borrador",
+    "ResearchFolder": "Carpeta contenedora de Documentación e Investigación",
+    "TrashFolder": "Papelera del Proyecto",
+    "TemplatesFolder": "Carpeta de Hojas de Plantilla del Proyecto",
+    "Folder": "Carpeta organizativa estándar",
+    "Text": "Documento de texto enriquecido"
+}
+
 @dataclass
 class LabelDefinition:
     id: int

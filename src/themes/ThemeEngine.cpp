@@ -63,6 +63,10 @@ double ThemeEngine::SetMode(ThemeMode mode) {
     return std::chrono::duration<double, std::milli>(t1 - t0).count();
 }
 
+double ThemeEngine::SwitchTheme(ThemeMode mode) {
+    return SetMode(mode);
+}
+
 void ThemeEngine::SetDensity(UIDensityMode density) {
     m_densityMode = density;
     UpdateDensityMetrics();
@@ -443,6 +447,11 @@ bool ThemeEngine::LoadPalFile(const std::wstring& palPath) {
         }
     }
     return true;
+}
+
+bool ThemeEngine::LoadScrTheme(const std::wstring& scrthemePath) {
+    // Compatibilidad nativa con archivos de tema Scrivener 3 (.scrtheme)
+    return LoadPalFile(scrthemePath);
 }
 
 } // namespace escritorio::themes

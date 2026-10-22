@@ -97,6 +97,7 @@ public:
     ~ThemeEngine() = default;
 
     double SetMode(ThemeMode mode); // Retorna latencia en ms
+    double SwitchTheme(ThemeMode mode);
     void SetDensity(UIDensityMode density);
 
     ThemeMode GetCurrentMode() const { return m_currentMode; }
@@ -114,6 +115,7 @@ public:
 
     // Carga básica de temas .pal / .scrtheme en caliente
     bool LoadPalFile(const std::wstring& palPath);
+    bool LoadScrTheme(const std::wstring& scrthemePath);
 
 private:
     void InitPalette(ThemeMode mode);
