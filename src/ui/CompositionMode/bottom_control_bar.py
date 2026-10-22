@@ -80,6 +80,10 @@ class BottomControlBar:
     def set_goto_items(self, items: List[GoToItem]):
         self.goto_items = items
 
+    @property
+    def goto_tree(self) -> List[GoToItem]:
+        return self.goto_items
+
     def update_live_metrics(self, doc_words: int, doc_chars: int, session_words: int = 0, session_target: int = 1500):
         self.current_words = doc_words
         self.current_characters = doc_chars

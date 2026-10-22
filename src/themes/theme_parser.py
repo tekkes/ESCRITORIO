@@ -317,6 +317,8 @@ class ScrThemeLoader:
 
         return raw_bytes
 
+    pack_package = export_to_scrtheme
+
 
 class ThemeParser:
     """Punto de entrada unificado para carga y serialización de temas de Scrivener y Escritorio."""

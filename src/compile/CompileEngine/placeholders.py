@@ -114,8 +114,17 @@ class PlaceholderResolver:
     Mantiene estado de contadores secuenciales, nombrados y jerárquicos.
     """
 
-    def __init__(self, project_metadata: Optional[Dict[str, Any]] = None):
-        self.meta: Dict[str, Any] = project_metadata or {}
+    def __init__(
+        self,
+        project_metadata: Optional[Dict[str, Any]] = None,
+        project_title: str = "",
+        author: str = ""
+    ):
+        self.meta: Dict[str, Any] = dict(project_metadata) if project_metadata else {}
+        if project_title:
+            self.meta["project_title"] = project_title
+        if author:
+            self.meta["author"] = author
         # Contadores primarios
         self.counters: Dict[str, int] = {
             "n": 0,

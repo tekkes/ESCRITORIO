@@ -189,9 +189,9 @@ class MyersDiffEngine:
         for ch in chunks:
             text = ch.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             if ch.op == DiffOp.DELETE:
-                html_parts.append(f'<span style="color:#EF4444;text-decoration:line-through;background-color:#FEE2E2;">{text}</span>')
+                html_parts.append(f'<del style="color:#EF4444;text-decoration:line-through;background-color:#FEE2E2;">{text}</del>')
             elif ch.op == DiffOp.INSERT:
-                html_parts.append(f'<span style="color:#10B981;text-decoration:underline;background-color:#D1FAE5;font-weight:bold;">{text}</span>')
+                html_parts.append(f'<ins style="color:#10B981;text-decoration:underline;background-color:#D1FAE5;font-weight:bold;">{text}</ins>')
             else:
                 html_parts.append(text)
 

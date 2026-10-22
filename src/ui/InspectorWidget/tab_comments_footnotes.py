@@ -139,9 +139,12 @@ class TabCommentsFootnotes:
         length: int = 0,
         quote: str = "",
         author: str = "Escritor",
-        color_hex: str = "#FBBF24"
+        color_hex: str = "#FBBF24",
+        end_offset: Optional[int] = None
     ) -> CommentItem:
         """Añade un comentario enlazado a un fragmento del texto."""
+        if end_offset is not None and length <= 0:
+            length = max(0, end_offset - start_offset)
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cid = f"comm_{int(datetime.datetime.now().timestamp()*1000)}"
 

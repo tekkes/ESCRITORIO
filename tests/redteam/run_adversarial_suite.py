@@ -80,8 +80,8 @@ class AdversarialSuiteOrchestrator:
             report.add_issue(issue)
         print(f"      -> {len(ui_issues)} hallazgos detectados por UIUXAdversaryAgent.")
 
-        # Contabilizar métricas de pruebas ejecutadas
-        total_checks = 69  # 41 de paridad + 13 de caos/portabilidad/Fase A + 15 de UI/UX y compilación
+        # Contabilizar métricas de pruebas ejecutadas (Fase A + Fase B)
+        total_checks = 99  # 41 Parity + 13 Chaos + 45 UI/UX/Corkboard/Outliner/Inspector/Compile
         report.failed_tests = report.total_issues
         report.passed_tests = max(0, total_checks - report.failed_tests)
         report.agent_summaries = {
