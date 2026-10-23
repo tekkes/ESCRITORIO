@@ -3,12 +3,13 @@
 # ==========================================
 
 # Directorios de compilación intermedia y artefactos binarios
-/build/
-/target/
-/dist/
-/out/
-/bin/
-/obj/
+build/
+target/
+dist/
+out/
+bin/
+obj/
+*.spec
 .vs/
 .vscode/
 

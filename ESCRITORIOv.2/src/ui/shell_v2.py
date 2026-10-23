@@ -61,9 +61,9 @@ class ShellV2(QMainWindow):
         self.backup_mgr = BackupManager(backup_dir)
 
         # Construcción de la interfaz
+        self._init_central_ui()
         self._init_menu_bar()
         self._init_tool_bar()
-        self._init_central_ui()
         self._init_status_bar()
         self._apply_theme(self.current_theme)
 
@@ -122,8 +122,8 @@ class ShellV2(QMainWindow):
 
         # 4. Navegar
         m_nav = mb.addMenu("&Navegar")
-        self._add_act(m_nav, "Documento Anterior", self.editor._go_back, "Alt+Left")
-        self._add_act(m_nav, "Documento Siguiente", self.editor._go_forward, "Alt+Right")
+        self._add_act(m_nav, "Documento Anterior", lambda: self.editor._go_back(), "Alt+Left")
+        self._add_act(m_nav, "Documento Siguiente", lambda: self.editor._go_forward(), "Alt+Right")
         self._add_act(m_nav, "Abrir en Ventana de Referencia Rápida", self._open_quick_ref, "Space")
 
         # 5. Proyecto
@@ -143,8 +143,8 @@ class ShellV2(QMainWindow):
         # 7. Formato
         m_fmt = mb.addMenu("&Formato")
         self._add_act(m_fmt, "Negrita", lambda: self.editor._set_font_weight(QFont.Weight.Bold), QKeySequence.StandardKey.Bold)
-        self._add_act(m_fmt, "Cursiva", self.editor._toggle_italic, QKeySequence.StandardKey.Italic)
-        self._add_act(m_fmt, "Subrayado", self.editor._toggle_underline, QKeySequence.StandardKey.Underline)
+        self._add_act(m_fmt, "Cursiva", lambda: self.editor._toggle_italic(), QKeySequence.StandardKey.Italic)
+        self._add_act(m_fmt, "Subrayado", lambda: self.editor._toggle_underline(), QKeySequence.StandardKey.Underline)
 
         # 8. Herramientas
         m_tools = mb.addMenu("&Herramientas")
