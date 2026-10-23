@@ -1,27 +1,12 @@
 """
 ESCRITORIO v2.0 - Theme Engine & Visual Styling
 Motor de diseño y estilos inspirado en la estética limpia y profesional de Scrivener 3 para macOS,
-adaptado a Windows 11 con High DPI y soporte para temas en caliente.
+adaptado a Windows 11 con High DPI y soporte para 8 temas completos en caliente.
 """
 
 from typing import Dict, Any
 
 V2_THEMES = {
-    "macos_light": {
-        "name": "macOS Claro",
-        "bg_app": "#f5f5f7",
-        "bg_sidebar": "#ececf0",
-        "bg_editor": "#ffffff",
-        "bg_card": "#ffffff",
-        "text_main": "#1d1d1f",
-        "text_secondary": "#6e6e73",
-        "border": "#d2d2d7",
-        "accent": "#0071e3",
-        "accent_hover": "#0077ed",
-        "corkboard_bg": "#d9cfbe",
-        "toolbar_bg": "#f0f0f2",
-        "highlight": "#b3d7ff"
-    },
     "obsidian_dark": {
         "name": "Oscuro Obsidiana",
         "bg_app": "#1e1e24",
@@ -37,8 +22,53 @@ V2_THEMES = {
         "toolbar_bg": "#1a1a20",
         "highlight": "#4a3b69"
     },
+    "macos_light": {
+        "name": "macOS Claro Minimalista",
+        "bg_app": "#f5f5f7",
+        "bg_sidebar": "#ececf0",
+        "bg_editor": "#ffffff",
+        "bg_card": "#ffffff",
+        "text_main": "#1d1d1f",
+        "text_secondary": "#6e6e73",
+        "border": "#d2d2d7",
+        "accent": "#0071e3",
+        "accent_hover": "#0077ed",
+        "corkboard_bg": "#d9cfbe",
+        "toolbar_bg": "#f0f0f2",
+        "highlight": "#b3d7ff"
+    },
+    "nordic_frost": {
+        "name": "Nordic Frost (Azul Ártico)",
+        "bg_app": "#2e3440",
+        "bg_sidebar": "#242933",
+        "bg_editor": "#3b4252",
+        "bg_card": "#3b4252",
+        "text_main": "#eceff4",
+        "text_secondary": "#d8dee9",
+        "border": "#4c566a",
+        "accent": "#88c0d0",
+        "accent_hover": "#81a1c1",
+        "corkboard_bg": "#212630",
+        "toolbar_bg": "#272c36",
+        "highlight": "#434c5e"
+    },
+    "catppuccin_mocha": {
+        "name": "Catppuccin Mocha",
+        "bg_app": "#1e1e2e",
+        "bg_sidebar": "#181825",
+        "bg_editor": "#24273a",
+        "bg_card": "#24273a",
+        "text_main": "#cdd6f4",
+        "text_secondary": "#a6adc8",
+        "border": "#45475a",
+        "accent": "#cba6f7",
+        "accent_hover": "#b4befe",
+        "corkboard_bg": "#14141e",
+        "toolbar_bg": "#181825",
+        "highlight": "#585b70"
+    },
     "sepia_classic": {
-        "name": "Sepia Clásico",
+        "name": "Sepia Pergamino",
         "bg_app": "#f4ecd8",
         "bg_sidebar": "#eadeca",
         "bg_editor": "#fdf6e2",
@@ -55,8 +85,8 @@ V2_THEMES = {
     "solarized_dark": {
         "name": "Solarizado Oscuro",
         "bg_app": "#002b36",
-        "bg_sidebar": "#073642",
-        "bg_editor": "#00212b",
+        "bg_sidebar": "#00212b",
+        "bg_editor": "#073642",
         "bg_card": "#073642",
         "text_main": "#839496",
         "text_secondary": "#586e75",
@@ -64,8 +94,68 @@ V2_THEMES = {
         "accent": "#268bd2",
         "accent_hover": "#2aa198",
         "corkboard_bg": "#021c22",
-        "toolbar_bg": "#073642",
-        "highlight": "#073642"
+        "toolbar_bg": "#00212b",
+        "highlight": "#0a4554"
+    },
+    "solarized_light": {
+        "name": "Solarizado Claro",
+        "bg_app": "#fdf6e3",
+        "bg_sidebar": "#eee8d5",
+        "bg_editor": "#ffffff",
+        "bg_card": "#fdf6e3",
+        "text_main": "#657b83",
+        "text_secondary": "#93a1a1",
+        "border": "#d5cbb6",
+        "accent": "#268bd2",
+        "accent_hover": "#2aa198",
+        "corkboard_bg": "#dfd6bf",
+        "toolbar_bg": "#eee8d5",
+        "highlight": "#eee8d5"
+    },
+    "high_contrast_dark": {
+        "name": "Alto Contraste Accesibilidad",
+        "bg_app": "#000000",
+        "bg_sidebar": "#0a0a0a",
+        "bg_editor": "#121212",
+        "bg_card": "#1a1a1a",
+        "text_main": "#ffffff",
+        "text_secondary": "#cccccc",
+        "border": "#00ffff",
+        "accent": "#00ffff",
+        "accent_hover": "#33ffff",
+        "corkboard_bg": "#050505",
+        "toolbar_bg": "#000000",
+        "highlight": "#005577"
+    },
+    "carbon_dark": {
+        "name": "Carbon Dark (Grafito)",
+        "bg_app": "#18191a",
+        "bg_sidebar": "#1f2022",
+        "bg_editor": "#141517",
+        "bg_card": "#25272a",
+        "text_main": "#e4e6eb",
+        "text_secondary": "#b0b3b8",
+        "border": "#2e3033",
+        "accent": "#3b82f6",
+        "accent_hover": "#60a5fa",
+        "corkboard_bg": "#1c1d1f",
+        "toolbar_bg": "#202124",
+        "highlight": "#2d3748"
+    },
+    "scrivener_classic": {
+        "name": "Scrivener 3 Clásico",
+        "bg_app": "#eae8e1",
+        "bg_sidebar": "#ded9cd",
+        "bg_editor": "#fbfbf9",
+        "bg_card": "#ffffff",
+        "text_main": "#2b2b2b",
+        "text_secondary": "#656565",
+        "border": "#c5bfae",
+        "accent": "#526f84",
+        "accent_hover": "#658ba6",
+        "corkboard_bg": "#c9bea9",
+        "toolbar_bg": "#e2ded5",
+        "highlight": "#d0dbe5"
     }
 }
 
@@ -144,7 +234,7 @@ def get_v2_stylesheet(theme_key: str = "obsidian_dark") -> str:
         background-color: {t['border']};
         border: 1px solid {t['border']};
     }}
-    QToolButton:pressed {{
+    QToolButton:pressed, QToolButton:checked {{
         background-color: {t['accent']};
         color: #ffffff;
     }}
@@ -243,6 +333,32 @@ def get_v2_stylesheet(theme_key: str = "obsidian_dark") -> str:
         color: {t['accent']};
     }}
 
+    /* Desplegables QComboBox */
+    QComboBox {{
+        background-color: {t['bg_card']};
+        color: {t['text_main']};
+        border: 1px solid {t['border']};
+        border-radius: 5px;
+        padding: 3px 10px;
+        min-height: 24px;
+        font-weight: 500;
+    }}
+    QComboBox:hover {{
+        border-color: {t['accent']};
+    }}
+    QComboBox::drop-down {{
+        border: none;
+        width: 18px;
+    }}
+    QComboBox QAbstractItemView {{
+        background-color: {t['bg_card']};
+        color: {t['text_main']};
+        border: 1px solid {t['border']};
+        selection-background-color: {t['accent']};
+        selection-color: #ffffff;
+        padding: 4px;
+    }}
+
     /* Entradas de Texto y Buscadores */
     QLineEdit {{
         background-color: {t['bg_editor']};
@@ -253,6 +369,27 @@ def get_v2_stylesheet(theme_key: str = "obsidian_dark") -> str:
     }}
     QLineEdit:focus {{
         border: 1px solid {t['accent']};
+    }}
+
+    /* Listas y Tablas */
+    QListWidget, QTableWidget {{
+        background-color: {t['bg_sidebar']};
+        color: {t['text_main']};
+        border: 1px solid {t['border']};
+        border-radius: 5px;
+    }}
+    QListWidget::item:selected, QTableWidget::item:selected {{
+        background-color: {t['accent']};
+        color: #ffffff;
+    }}
+    QHeaderView::section {{
+        background-color: {t['toolbar_bg']};
+        color: {t['text_secondary']};
+        border: none;
+        border-bottom: 1px solid {t['border']};
+        border-right: 1px solid {t['border']};
+        padding: 4px 8px;
+        font-weight: bold;
     }}
 
     /* Pestañas */

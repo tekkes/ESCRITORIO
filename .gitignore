@@ -41,8 +41,11 @@ npm-debug.log*
 portable_config/backups/*.zip
 !portable_config/backups/.gitkeep
 ESCRITORIOv.2/config/backups/*.zip
+ESCRITORIOv.2/config/backups/backups_manifest.json
 !ESCRITORIOv.2/config/backups/.gitkeep
 ESCRITORIOv.2/config/projects/
+ESCRITORIOv.2/config/v2_settings.json
+config/escritorio_settings.json
 
 # Archivos de sistema operativo Windows
 Thumbs.db

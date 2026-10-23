@@ -50,10 +50,15 @@ class ShellV2(QMainWindow):
         self.setWindowTitle("Escritorio v2.0 — Estación de Trabajo Editorial Nativa (Scrivener 3 Architecture)")
         self.resize(1380, 880)
 
+        # Cargar configuración persistente (temas, modo de vista, último proyecto)
+        self.settings = self._load_settings()
+        self.current_theme = self.settings.get("theme", "obsidian_dark")
+        self.current_view_mode = self.settings.get("view_mode", 0)
+        self.last_project_path = self.settings.get("last_project_path", "")
+
         # Estado del proyecto
         self.project: Optional[EscritorioProjectV2] = None
         self.active_node: Optional[BinderNode] = None
-        self.current_theme = "obsidian_dark"
         self.session_words_written = 0
 
         # Gestor de copias de seguridad
@@ -67,16 +72,77 @@ class ShellV2(QMainWindow):
         self._init_status_bar()
         self._apply_theme(self.current_theme)
 
+        # Restaurar visibilidad de paneles persistida
+        if not self.settings.get("binder_visible", True):
+            self._toggle_binder(False)
+        if not self.settings.get("inspector_visible", True):
+            self._toggle_inspector(False)
+
         # Autoguardado atómico silencioso cada 2 segundos
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self._auto_save)
         self.autosave_timer.start(2000)
 
-        # Cargar proyecto inicial o mostrar selector
+        # Determinar proyecto a abrir: CLI > last_project_path > demo
+        target_path = None
         if project_path and Path(project_path).exists():
-            self.load_project(Path(project_path))
+            target_path = Path(project_path)
+        elif self.last_project_path and Path(self.last_project_path).exists():
+            target_path = Path(self.last_project_path)
+
+        if target_path:
+            try:
+                self.load_project(target_path)
+            except Exception as e:
+                print(f"[ShellV2] Error al abrir proyecto previo ({target_path}): {e}")
+                self._load_or_create_default()
         else:
             self._load_or_create_default()
+
+        # Restaurar modo de vista guardado
+        self._set_central_view(self.current_view_mode)
+
+    # =========================================================================
+    # GESTIÓN DE CONFIGURACIÓN Y PERSISTENCIA DE SESIÓN
+    # =========================================================================
+
+    def _get_config_path(self) -> Path:
+        cfg_dir = Path(__file__).resolve().parent.parent.parent / "config"
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+        return cfg_dir / "v2_settings.json"
+
+    def _load_settings(self) -> dict:
+        cfg_file = self._get_config_path()
+        if cfg_file.exists():
+            try:
+                with open(cfg_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"[ShellV2] Advertencia: no se pudo leer configuración: {e}")
+        return {
+            "theme": "obsidian_dark",
+            "view_mode": 0,
+            "last_project_path": "",
+            "binder_visible": True,
+            "inspector_visible": True
+        }
+
+    def _save_settings(self):
+        try:
+            cfg_file = self._get_config_path()
+            data = {
+                "theme": getattr(self, "current_theme", "obsidian_dark"),
+                "view_mode": getattr(self, "current_view_mode", 0),
+                "last_project_path": getattr(self, "last_project_path", ""),
+                "binder_visible": self.binder.isVisible() if hasattr(self, "binder") else True,
+                "inspector_visible": self.inspector.isVisible() if hasattr(self, "inspector") else True
+            }
+            tmp_file = cfg_file.with_suffix(".tmp")
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            tmp_file.replace(cfg_file)
+        except Exception as e:
+            print(f"[ShellV2] Advertencia: no se pudo guardar configuración: {e}")
 
     # =========================================================================
     # CONSTRUCCIÓN DE LA BARRA DE MENÚS (9 MENÚS DE SCRIVENER 3)
@@ -149,8 +215,13 @@ class ShellV2(QMainWindow):
         # 8. Herramientas
         m_tools = mb.addMenu("&Herramientas")
         m_themes = m_tools.addMenu("🎨 Temas Visuales")
+        self.theme_actions: Dict[str, QAction] = {}
         for th_key, th_data in V2_THEMES.items():
-            self._add_act(m_themes, th_data["name"], lambda k=th_key: self._apply_theme(k))
+            act = m_themes.addAction(th_data["name"])
+            act.setCheckable(True)
+            act.setChecked(th_key == self.current_theme)
+            act.triggered.connect(lambda checked, key=th_key: self._apply_theme(key))
+            self.theme_actions[th_key] = act
 
         # 9. Ayuda
         m_help = mb.addMenu("A&yuda")
@@ -201,9 +272,33 @@ class ShellV2(QMainWindow):
             self.seg_group.addButton(btn, idx)
             seg_layout.addWidget(btn)
 
-        btn_e.setChecked(True)
+        btn_active = self.seg_group.button(self.current_view_mode)
+        if btn_active:
+            btn_active.setChecked(True)
+        else:
+            btn_e.setChecked(True)
         self.seg_group.idClicked.connect(self._set_central_view)
         tb.addWidget(seg_frame)
+
+        tb.addSeparator()
+
+        # Botón de Acceso Rápido a Modos Visuales / Temas en el Panel Principal
+        self.btn_theme_mode = QToolButton()
+        th_display = V2_THEMES.get(self.current_theme, {}).get("name", "Oscuro Obsidiana")
+        self.btn_theme_mode.setText(f"🎨 {th_display}")
+        self.btn_theme_mode.setToolTip("Selector rápido de modo visual / tema editorial")
+        self.btn_theme_mode.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+
+        self.toolbar_theme_menu = QMenu(self.btn_theme_mode)
+        self.toolbar_theme_actions: Dict[str, QAction] = {}
+        for th_key, th_data in V2_THEMES.items():
+            act = self.toolbar_theme_menu.addAction(f"🎨 {th_data['name']}")
+            act.setCheckable(True)
+            act.setChecked(th_key == self.current_theme)
+            act.triggered.connect(lambda checked, key=th_key: self._apply_theme(key))
+            self.toolbar_theme_actions[th_key] = act
+        self.btn_theme_mode.setMenu(self.toolbar_theme_menu)
+        tb.addWidget(self.btn_theme_mode)
 
         tb.addSeparator()
 
@@ -340,6 +435,10 @@ class ShellV2(QMainWindow):
 
         self._update_status_totals()
 
+        # Guardar en configuración persistente como último proyecto
+        self.last_project_path = str(project_path.resolve())
+        self._save_settings()
+
     def _load_or_create_default(self):
         """Crea un proyecto de demostración en disco local si no hay proyecto abierto."""
         base_dir = Path(__file__).resolve().parent.parent.parent / "config" / "projects"
@@ -408,6 +507,7 @@ class ShellV2(QMainWindow):
         self._on_node_selected(node)
 
     def _set_central_view(self, index: int):
+        self.current_view_mode = index
         self.view_stack.setCurrentIndex(index)
         btn = self.seg_group.button(index)
         if btn and not btn.isChecked():
@@ -417,6 +517,13 @@ class ShellV2(QMainWindow):
             self.corkboard.load_parent_node(self.active_node, self.project)
         elif index == 2 and self.active_node and self.project:
             self.outliner.load_parent_node(self.active_node, self.project)
+        elif index == 3 and self.active_node and self.project:
+            if self.active_node.is_folder():
+                self.scrivenings.load_nodes(self.active_node.children, self.project)
+            else:
+                self.scrivenings.load_nodes([self.active_node], self.project)
+
+        self._save_settings()
 
     def _on_text_modified(self):
         self.session_words_written += 1
@@ -496,10 +603,12 @@ class ShellV2(QMainWindow):
     def _toggle_binder(self, checked: bool):
         self.binder.setVisible(checked)
         self.btn_toggle_binder.setChecked(checked)
+        self._save_settings()
 
     def _toggle_inspector(self, checked: bool):
         self.inspector.setVisible(checked)
         self.btn_toggle_inspector.setChecked(checked)
+        self._save_settings()
 
     def _toggle_split_v(self):
         QMessageBox.information(self, "Pantalla Dividida", "División de pantalla vertical sincronizada activa.")
@@ -559,9 +668,26 @@ class ShellV2(QMainWindow):
         pass
 
     def _apply_theme(self, theme_key: str):
+        if not theme_key or theme_key not in V2_THEMES:
+            theme_key = "obsidian_dark"
         self.current_theme = theme_key
         qss = get_v2_stylesheet(theme_key)
         self.setStyleSheet(qss)
+
+        # Sincronizar checkmarks en el menú de Herramientas
+        if hasattr(self, "theme_actions"):
+            for k, act in self.theme_actions.items():
+                act.setChecked(k == theme_key)
+
+        # Sincronizar texto y checkmarks en el botón del panel
+        if hasattr(self, "btn_theme_mode"):
+            th_name = V2_THEMES[theme_key]["name"]
+            self.btn_theme_mode.setText(f"🎨 {th_name}")
+        if hasattr(self, "toolbar_theme_actions"):
+            for k, act in self.toolbar_theme_actions.items():
+                act.setChecked(k == theme_key)
+
+        self._save_settings()
 
     def _on_about(self):
         QMessageBox.about(
@@ -577,6 +703,7 @@ class ShellV2(QMainWindow):
     def closeEvent(self, event):
         """Al cerrar la aplicación, guardar todo y liberar lock."""
         self._auto_save()
+        self._save_settings()
         if self.project:
             # Crear backup automático al salir
             try:
