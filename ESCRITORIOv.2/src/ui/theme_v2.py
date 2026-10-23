@@ -430,4 +430,62 @@ def get_v2_stylesheet(theme_key: str = "obsidian_dark") -> str:
     QSplitter::handle:vertical {{
         height: 1px;
     }}
+
+    /* Barras del Editor de Texto (Header, Formato y Footer) */
+    QFrame#EditorHeaderBar {{
+        background-color: {t['toolbar_bg']};
+        border-bottom: 1px solid {t['border']};
+        padding: 2px 8px;
+    }}
+    QToolBar#EditorFormatBar {{
+        background-color: {t['toolbar_bg']};
+        border-bottom: 1px solid {t['border']};
+        padding: 3px 6px;
+        spacing: 4px;
+    }}
+    QFrame#EditorFooterBar {{
+        background-color: {t['toolbar_bg']};
+        border-top: 1px solid {t['border']};
+        padding: 2px 10px;
+    }}
+
+    /* Botones de acción del Editor y Formato */
+    QToolButton.EditorActionBtn, QToolButton.FormatToolButton {{
+        background-color: transparent;
+        color: {t['text_main']};
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 1px;
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 12px;
+        font-weight: bold;
+    }}
+    QToolButton.EditorActionBtn:hover, QToolButton.FormatToolButton:hover {{
+        background-color: {t['border']};
+        border: 1px solid {t['border']};
+    }}
+    QToolButton.EditorActionBtn:checked, QToolButton.FormatToolButton:checked,
+    QToolButton.EditorActionBtn:pressed, QToolButton.FormatToolButton:pressed {{
+        background-color: {t['accent']};
+        color: #ffffff;
+        border: 1px solid {t['accent']};
+    }}
+
+    /* Tarjetas y Paneles de Estadísticas */
+    QFrame.StatCard {{
+        background-color: {t['bg_card']};
+        border: 1px solid {t['border']};
+        border-radius: 8px;
+        padding: 12px;
+    }}
+    QLabel.StatValue {{
+        font-size: 18px;
+        font-weight: bold;
+        color: {t['accent']};
+    }}
+    QLabel.StatLabel {{
+        font-size: 11px;
+        color: {t['text_secondary']};
+    }}
     """

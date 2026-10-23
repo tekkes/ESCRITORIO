@@ -27,6 +27,7 @@ from PyQt6.QtGui import QAction, QKeySequence, QFont, QIcon
 from ..core.project_v2 import EscritorioProjectV2, BinderNode
 from ..core.xml_engine_v2 import XmlEngineV2
 from ..core.backup_manager import BackupManager
+from ..core.stats_manager import WritingStatsManager
 from .theme_v2 import get_v2_stylesheet, V2_THEMES
 from .binder_v2 import BinderV2
 from .editor_v2 import EditorV2
@@ -62,8 +63,11 @@ class ShellV2(QMainWindow):
         self.session_words_written = 0
 
         # Gestor de copias de seguridad
-        backup_dir = Path(__file__).resolve().parent.parent.parent / "config" / "backups"
-        self.backup_mgr = BackupManager(backup_dir)
+        config_dir = Path(__file__).resolve().parent.parent.parent / "config"
+        self.backup_mgr = BackupManager(config_dir / "backups")
+
+        # Gestor de tiempo y estadísticas de escritura
+        self.stats_mgr = WritingStatsManager(config_dir)
 
         # Construcción de la interfaz
         self._init_central_ui()
@@ -82,6 +86,11 @@ class ShellV2(QMainWindow):
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self._auto_save)
         self.autosave_timer.start(2000)
+
+        # Temporizador de reloj continuo de tiempo de trabajo (cada 1 segundo)
+        self.clock_timer = QTimer(self)
+        self.clock_timer.timeout.connect(self._on_clock_tick)
+        self.clock_timer.start(1000)
 
         # Determinar proyecto a abrir: CLI > last_project_path > demo
         target_path = None
@@ -302,12 +311,12 @@ class ShellV2(QMainWindow):
 
         tb.addSeparator()
 
-        # Botones de Acción Rápida
-        btn_targets = QToolButton()
-        btn_targets.setText("🎯 Objetivos")
-        btn_targets.setToolTip("Objetivos de Proyecto y Sesión (Ctrl+Shift+T)")
-        btn_targets.clicked.connect(self._open_targets)
-        tb.addWidget(btn_targets)
+        # Botón de Acceso Rápido a Estadísticas de Tiempo y Objetivos
+        self.btn_stats_hud = QToolButton()
+        self.btn_stats_hud.setText("⏱️ 0s | 🎯 Objetivos")
+        self.btn_stats_hud.setToolTip("Estadísticas de tiempo de trabajo y objetivos del proyecto (Ctrl+Shift+T)")
+        self.btn_stats_hud.clicked.connect(self._open_targets)
+        tb.addWidget(self.btn_stats_hud)
 
         btn_ling = QToolButton()
         btn_ling.setText("🔍 Foco")
@@ -399,6 +408,9 @@ class ShellV2(QMainWindow):
         self.lbl_sb_doc = QLabel("Documento: Ninguno")
         sb.addWidget(self.lbl_sb_doc, 1)
 
+        self.lbl_sb_time = QLabel("⏱️ Sesión: 0s | ✍️ Doc: 0s")
+        sb.addPermanentWidget(self.lbl_sb_time)
+
         self.lbl_sb_words = QLabel("Total Obra: 0 palabras")
         sb.addPermanentWidget(self.lbl_sb_words)
 
@@ -484,6 +496,7 @@ class ShellV2(QMainWindow):
     def _on_node_selected(self, node: BinderNode):
         """Maneja la selección de cualquier nodo en el Binder, Corcho o Esquema."""
         self.active_node = node
+        self.stats_mgr.set_active_node(node.uuid)
         self.project.load_node_content(node)
 
         # Actualizar Editor
@@ -527,6 +540,7 @@ class ShellV2(QMainWindow):
 
     def _on_text_modified(self):
         self.session_words_written += 1
+        self.stats_mgr.on_keystroke(1)
         self._update_status_totals()
 
     def _on_structure_changed(self):
@@ -578,9 +592,9 @@ class ShellV2(QMainWindow):
     def _open_targets(self):
         if not self.project:
             return
-        draft_words = self.project.draft_node.total_word_count() if self.project.draft_node else 0
-        hud = TargetsHudV2(self.project, draft_words, self.session_words_written, self)
+        hud = TargetsHudV2(self.project, self.stats_mgr, self.active_node, self)
         hud.exec()
+        self._update_status_totals()
 
     def _open_linguistic_focus(self):
         text = self.editor.editor.toPlainText()
@@ -700,10 +714,22 @@ class ShellV2(QMainWindow):
             "Scrivenings continuo, Inspector de 6 pestañas con comparador Diff, y compilador multiformato.</p>"
         )
 
+    def _on_clock_tick(self):
+        """Actualiza cada segundo los contadores de tiempo en vivo."""
+        self.stats_mgr.on_tick()
+        s_stats = self.stats_mgr.get_session_stats()
+        if hasattr(self, "btn_stats_hud"):
+            self.btn_stats_hud.setText(f"⏱️ {s_stats['formatted_total']} | 🎯 Objetivos")
+        if hasattr(self, "lbl_sb_time"):
+            doc_uuid = self.active_node.uuid if self.active_node else None
+            doc_time_str = self.stats_mgr.format_hms(self.stats_mgr.get_doc_time(doc_uuid))
+            self.lbl_sb_time.setText(f"⏱️ Sesión: {s_stats['formatted_total']} | ✍️ Doc: {doc_time_str}")
+
     def closeEvent(self, event):
         """Al cerrar la aplicación, guardar todo y liberar lock."""
         self._auto_save()
         self._save_settings()
+        self.stats_mgr.save()
         if self.project:
             # Crear backup automático al salir
             try:

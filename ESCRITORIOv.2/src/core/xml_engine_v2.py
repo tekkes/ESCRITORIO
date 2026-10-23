@@ -29,8 +29,11 @@ class XmlEngineV2:
         targets_elem = ET.SubElement(meta_elem, "ProjectTargets")
         ET.SubElement(targets_elem, "DraftTarget").text = str(project.project_target_words)
         ET.SubElement(targets_elem, "SessionTarget").text = str(project.session_target_words)
+        ET.SubElement(targets_elem, "DailyHoursTarget").text = str(getattr(project, "daily_hours_target", 2.0))
         if project.target_deadline:
             ET.SubElement(targets_elem, "Deadline").text = project.target_deadline
+        if hasattr(project, "target_work_days"):
+            ET.SubElement(targets_elem, "WorkDays").text = ",".join(map(str, project.target_work_days))
 
         # Etiquetas
         labels_elem = ET.SubElement(meta_elem, "LabelSettings")
@@ -129,6 +132,15 @@ class XmlEngineV2:
                     s_elem = targets.find("SessionTarget")
                     if s_elem is not None and s_elem.text:
                         project.session_target_words = int(s_elem.text)
+                    dh_elem = targets.find("DailyHoursTarget")
+                    if dh_elem is not None and dh_elem.text:
+                        project.daily_hours_target = float(dh_elem.text)
+                    dl_elem = targets.find("Deadline")
+                    if dl_elem is not None and dl_elem.text:
+                        project.target_deadline = dl_elem.text
+                    wd_elem = targets.find("WorkDays")
+                    if wd_elem is not None and wd_elem.text:
+                        project.target_work_days = [int(x) for x in wd_elem.text.split(",") if x.isdigit()]
 
             # Cargar Colecciones
             colls_elem = root.find("Collections")
