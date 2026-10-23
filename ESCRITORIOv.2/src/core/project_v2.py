@@ -162,6 +162,15 @@ class EscritorioProjectV2:
         """Ruta al archivo XML principal del proyecto (.escrx)."""
         return self.path / f"{self.name}.escrx"
 
+    @property
+    def status_list(self) -> List[str]:
+        """Lista plana de nombres de estados."""
+        return [s.get("name", "") if isinstance(s, dict) else str(s) for s in self.statuses]
+
+    @status_list.setter
+    def status_list(self, values: List[str]):
+        self.statuses = [{"id": f"status_{i}", "name": v} for i, v in enumerate(values)]
+
     def find_node_by_uuid(self, target_uuid: str, nodes: Optional[List[BinderNode]] = None) -> Optional[BinderNode]:
         """Búsqueda recursiva en el árbol de nodos."""
         if nodes is None:
