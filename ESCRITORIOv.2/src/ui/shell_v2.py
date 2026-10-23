@@ -41,9 +41,11 @@ from .targets_hud_v2 import TargetsHudV2
 from .linguistic_focus import LinguisticFocusDialog
 from .compile_modal_v2 import CompileModalV2
 from .project_chooser import ProjectChooserDialog
+from .menu_builder_v2 import MenuBuilderV2
+from .shell_actions_v2 import ShellActionsV2Mixin
 
 
-class ShellV2(QMainWindow):
+class ShellV2(QMainWindow, ShellActionsV2Mixin):
     """Ventana principal de ESCRITORIO v2.0."""
 
     def __init__(self, project_path: Optional[str] = None, parent=None):
@@ -158,91 +160,8 @@ class ShellV2(QMainWindow):
     # =========================================================================
 
     def _init_menu_bar(self):
-        mb = self.menuBar()
-
-        # 1. Archivo
-        m_file = mb.addMenu("&Archivo")
-        self._add_act(m_file, "Nuevo Proyecto...", self._on_new_project, "Ctrl+Shift+N")
-        self._add_act(m_file, "Abrir Proyecto...", self._on_open_project, QKeySequence.StandardKey.Open)
-        self._add_act(m_file, "Guardar Proyecto", self._on_save_project, QKeySequence.StandardKey.Save)
-        m_file.addSeparator()
-        self._add_act(m_file, "Compilar Manuscrito (Compile)...", self._on_compile, "Ctrl+Shift+E")
-        self._add_act(m_file, "Crear Copia de Seguridad Inmediata (ZIP)", self._on_manual_backup)
-        m_file.addSeparator()
-        self._add_act(m_file, "Salir", self.close, QKeySequence.StandardKey.Quit)
-
-        # 2. Editar
-        m_edit = mb.addMenu("&Editar")
-        self._add_act(m_edit, "Deshacer", lambda: self.editor.editor.undo(), QKeySequence.StandardKey.Undo)
-        self._add_act(m_edit, "Rehacer", lambda: self.editor.editor.redo(), QKeySequence.StandardKey.Redo)
-        m_edit.addSeparator()
-        self._add_act(m_edit, "Cortar", lambda: self.editor.editor.cut(), QKeySequence.StandardKey.Cut)
-        self._add_act(m_edit, "Copiar", lambda: self.editor.editor.copy(), QKeySequence.StandardKey.Copy)
-        self._add_act(m_edit, "Pegar", lambda: self.editor.editor.paste(), QKeySequence.StandardKey.Paste)
-        self._add_act(m_edit, "Seleccionar Todo", lambda: self.editor.editor.selectAll(), QKeySequence.StandardKey.SelectAll)
-
-        # 3. Ver
-        m_view = mb.addMenu("&Ver")
-        self._add_act(m_view, "Modo Editor", lambda: self._set_central_view(0), "Ctrl+1")
-        self._add_act(m_view, "Pizarra de Corcho (Corkboard)", lambda: self._set_central_view(1), "Ctrl+2")
-        self._add_act(m_view, "Esquema Editorial (Outliner)", lambda: self._set_central_view(2), "Ctrl+3")
-        self._add_act(m_view, "Modo Scrivenings (Flujo Continuo)", lambda: self._set_central_view(3), "Ctrl+4")
-        m_view.addSeparator()
-        self._add_act(m_view, "Dividir Pantalla Verticalmente", self._toggle_split_v, "Ctrl+'")
-        self._add_act(m_view, "Dividir Pantalla Horizontalmente", self._toggle_split_h, "Ctrl+Shift+'")
-        m_view.addSeparator()
-        self._add_act(m_view, "Conmutar Archivador (Binder)", self._toggle_binder, "Ctrl+Shift+B")
-        self._add_act(m_view, "Conmutar Inspector", self._toggle_inspector, "Ctrl+Shift+I")
-        self._add_act(m_view, "Modo Composición a Pantalla Completa", self._open_composition, "F11")
-
-        # 4. Navegar
-        m_nav = mb.addMenu("&Navegar")
-        self._add_act(m_nav, "Documento Anterior", lambda: self.editor._go_back(), "Alt+Left")
-        self._add_act(m_nav, "Documento Siguiente", lambda: self.editor._go_forward(), "Alt+Right")
-        self._add_act(m_nav, "Abrir en Ventana de Referencia Rápida", self._open_quick_ref, "Space")
-
-        # 5. Proyecto
-        m_proj = mb.addMenu("&Proyecto")
-        self._add_act(m_proj, "Nueva Escena", lambda: self.binder.create_new_node("Text"), "Ctrl+N")
-        self._add_act(m_proj, "Nueva Carpeta", lambda: self.binder.create_new_node("Folder"), "Ctrl+Alt+N")
-        m_proj.addSeparator()
-        self._add_act(m_proj, "Objetivos de Proyecto (Project Targets)...", self._open_targets, "Ctrl+Shift+T")
-        self._add_act(m_proj, "Foco Lingüístico y Estadísticas...", self._open_linguistic_focus)
-
-        # 6. Documento
-        m_doc = mb.addMenu("&Documento")
-        self._add_act(m_doc, "Dividir en Posición del Cursor", self._split_document, "Ctrl+K")
-        self._add_act(m_doc, "Tomar Instantánea (Snapshot)", lambda: self.inspector.take_snapshot(), "Ctrl+5")
-        self._add_act(m_doc, "Mover a Papelera", lambda: self.binder._delete_node(self.active_node) if self.active_node else None, QKeySequence.StandardKey.Delete)
-
-        # 7. Formato
-        m_fmt = mb.addMenu("&Formato")
-        self._add_act(m_fmt, "Negrita", lambda: self.editor._set_font_weight(QFont.Weight.Bold), QKeySequence.StandardKey.Bold)
-        self._add_act(m_fmt, "Cursiva", lambda: self.editor._toggle_italic(), QKeySequence.StandardKey.Italic)
-        self._add_act(m_fmt, "Subrayado", lambda: self.editor._toggle_underline(), QKeySequence.StandardKey.Underline)
-
-        # 8. Herramientas
-        m_tools = mb.addMenu("&Herramientas")
-        m_themes = m_tools.addMenu("🎨 Temas Visuales")
-        self.theme_actions: Dict[str, QAction] = {}
-        for th_key, th_data in V2_THEMES.items():
-            act = m_themes.addAction(th_data["name"])
-            act.setCheckable(True)
-            act.setChecked(th_key == self.current_theme)
-            act.triggered.connect(lambda checked, key=th_key: self._apply_theme(key))
-            self.theme_actions[th_key] = act
-
-        # 9. Ayuda
-        m_help = mb.addMenu("A&yuda")
-        self._add_act(m_help, "Acerca de Escritorio v2.0", self._on_about)
-
-    def _add_act(self, menu: QMenu, text: str, slot, shortcut=None) -> QAction:
-        act = menu.addAction(text)
-        if shortcut:
-            act.setShortcut(QKeySequence(shortcut) if isinstance(shortcut, str) else shortcut)
-        if slot:
-            act.triggered.connect(slot)
-        return act
+        """Construye el árbol exhaustivo de los 9 menús de Scrivener 3 Windows 11."""
+        MenuBuilderV2.build(self)
 
     # =========================================================================
     # BARRA DE HERRAMIENTAS PREMIUM ESTILO SCRIVENER 3 MACOS

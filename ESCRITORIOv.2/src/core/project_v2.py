@@ -157,6 +157,11 @@ class EscritorioProjectV2:
             {"name": "Romance", "color": "#e91e63"},
         ]
 
+    @property
+    def xml_path(self) -> Path:
+        """Ruta al archivo XML principal del proyecto (.escrx)."""
+        return self.path / f"{self.name}.escrx"
+
     def find_node_by_uuid(self, target_uuid: str, nodes: Optional[List[BinderNode]] = None) -> Optional[BinderNode]:
         """Búsqueda recursiva en el árbol de nodos."""
         if nodes is None:
@@ -168,6 +173,20 @@ class EscritorioProjectV2:
             if found:
                 return found
         return None
+
+    def find_node(self, target_uuid: str) -> Optional[BinderNode]:
+        """Alias para find_node_by_uuid."""
+        return self.find_node_by_uuid(target_uuid)
+
+    def all_nodes(self) -> List[BinderNode]:
+        """Devuelve una lista aplanada con todos los nodos del proyecto."""
+        result: List[BinderNode] = []
+        def _collect(nodes: List[BinderNode]):
+            for n in nodes:
+                result.append(n)
+                _collect(n.children)
+        _collect(self.root_nodes)
+        return result
 
     def get_data_dir(self, node_uuid: str) -> Path:
         """Obtiene la ruta a Files/Data/<UUID>/."""
