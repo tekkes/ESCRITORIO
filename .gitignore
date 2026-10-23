@@ -39,6 +39,9 @@ npm-debug.log*
 # Backups locales portables (excluir archivos ZIP de respaldo)
 portable_config/backups/*.zip
 !portable_config/backups/.gitkeep
+ESCRITORIOv.2/config/backups/*.zip
+!ESCRITORIOv.2/config/backups/.gitkeep
+ESCRITORIOv.2/config/projects/
 
 # Archivos de sistema operativo Windows
 Thumbs.db
